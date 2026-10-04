@@ -68,8 +68,9 @@ input,textarea,select{font:inherit;color:inherit;font-size:16px}
 .line-input::placeholder{color:var(--ink3)}
 .line-input:focus{border-bottom-color:var(--accent)}
 select.line-input{appearance:none;-webkit-appearance:none}
-.lengths{display:flex;gap:22px;margin-top:26px;font-size:15px;color:var(--ink3)}
-.lengths button[aria-pressed="true"]{color:var(--ink);font-weight:700}
+.words{display:flex;align-items:baseline;gap:8px;margin-top:26px;font-size:15px;color:var(--ink3)}
+.words input{width:5.5em;border:0;border-bottom:1px solid var(--line);background:transparent;padding:4px 0 6px;text-align:right;font-weight:700;color:var(--ink);outline:none;font-variant-numeric:tabular-nums}
+.words input:focus{border-bottom-color:var(--accent)}
 
 .cta-wrap{display:flex;justify-content:center;padding:14px 24px 6px;flex:none}
 .cta{display:inline-flex;align-items:center;gap:8px;height:48px;padding:0 26px;border-radius:24px;border:2px solid var(--accent);color:var(--accent);font-weight:700;font-size:16.5px}
@@ -190,8 +191,9 @@ const store={
 };
 
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const FANFIC_DEFAULT="[2차 창작 집필 지침]\n분량이 아니라 밀도로 완성하는 2차 창작 소설을 쓴다. 입체적인 글은 분량이 아니라 변화의 개수로 만들어진다.\n\n1. 설정\n- 요청과 설정집에 적힌 원작, 주연, 호칭, 말투가 항상 우선이다. 호칭과 말투(반말/존댓말)는 지정된 대로만 쓰고 임의로 바꾸지 않는다.\n- 비어 있는 항목은 원작의 성격과 관계성을 계승해 합리적으로 정한다. 되묻지 말고 바로 쓴다.\n- 이번 이야기는 완전히 새로운 플롯이어야 한다. 아래 '이전 작품'이 있으면 소재와 구조가 겹치지 않게 한다.\n\n2. 쓰기 전 설계 (설계 내용은 출력하지 않는다)\n- 중심 사건 하나를 정하고, 그것이 인물을 실제로 어떻게 바꾸는지 결말선을 먼저 잡는다.\n- 씬 목록을 만들되, 각 씬은 직전 씬과 무대·온도·감정 방향 중 최소 하나가 다르게 배치한다. (예: 질투 → 들통 → 역공 → 반전)\n- 주연 중 한 명(보통 과묵한 쪽)에게 질투·불안·오해·후회 중 하나로 속을 태우는 마음고생 라인을 반드시 준다. 겉은 무표정해도 내면이 무너지는 대비를 쓰고, 논리로 말하던 인물이라면 그 논리가 무너지는 지점(감정을 다른 이름으로 부르다 들키는 식)을 보여준다. 거짓말할 때의 버릇 같은 tell은 한두 개만 정해 남발하지 않는다.\n- 조연에게 각기 다른 기능을 준다. 사건을 굴리는 자, 온도를 올리는 자, 반전의 단서를 심는 자. 같은 역할의 조연을 중복 배치하지 않는다.\n- 소품이나 모티프 하나를 정해 발단과 결말을 묶는다. 발단이 된 사물이 마지막 회수 지점이 되게 한다.\n\n3. 서사 원칙\n- 모든 문장과 대사에 의미가 있어야 한다. 필요한 만큼만 쓰고, 필요 없어지면 끝낸다. 특정 순간을 길게 묘사하려면 그럴 가치가 있어야 한다.\n- 한 씬은 한 번만. 같은 감정 비트를 조금씩 바꿔 반복하지 않는다. 같은 대사나 같은 깨달음을 여러 조연에게 시키지 않는다.\n- 분량이 길면 그만큼 장면 전환·씬·감정 변화가 많아야 한다. 무대를 계속 바꾼다.\n- 감정은 축적되고 방향을 튼다. 위기·오해·질투는 해소되며 인물을 실제로 한 뼘 자라게 한다.\n- 지정 분량은 하한일 뿐이다. 분량이 모자라면 문장을 늘리지 말고 새로운 씬, 감정이 한 번 더 방향을 트는 지점, 조연의 새 기능으로 새 국면을 연다.\n- 중심 소재는 결말에서 회수한다.\n\n4. 장르·톤\n분위기나 요청에 아래 장르가 오면 그 특징을 따른다. 두 장르를 조합할 때는 번갈아 놓지 말고 원인과 결과로 엮는다. (예: 질투가 원인이 되어 잘못을 저지르고 → 후회로 만회)\n- 후회남주: 무심함·오해로 상처를 준 인물이 뒤늦게 깨닫고 만회한다. 사과해 본 적 없는 인물이 처음 사과하는 순간이 전환점.\n- 피폐·이별 위기: 권태·오해·자존심이 곪아 관계가 무너지기 직전까지 갔다가 밑바닥에서 되돌아온다. 무겁고 진지하게.\n- 달달·슈가러시: 갈등은 거의 없거나 가볍게, 애정 표현과 다정한 순간에 집중한다.\n- 코미디·시트콤: 작은 사건 하나가 하루 안에 사방으로 굴러가고, 끝에 감정으로 착지한다. 무대를 빠르게 바꾼다.\n- 질투·오해: 제3자의 등장으로 한쪽이 속을 태운다. 실제 위협은 없어도 마음고생이 이야기를 끈다.\n- 잔잔·힐링: 큰 사건 없이 계절과 생활의 결을 따라가며, 소품과 반복되는 일상으로 관계의 깊이를 드러낸다.\n- 판타지 한 스푼: 회귀·몸 바뀜·미래 보기처럼 설정 하나만 비틀고, 그 가정 위에서 관계를 다시 비춘다.\n- 가족 드라마: 주변 가족과 인물이 크게 개입해 웃음과 온기를 만든다. 집 전체가 주인공.\n- 성장·커리어: 일에서의 좌절과 성취가 관계와 얽혀 두 사람을 성장시킨다.\n- 재회·시간 점프: 몇 년 뒤로 건너뛰어 세월이 쌓인 관계의 무게를 그린다.\n\n5. 문체\n- 지문에서 주연 두 사람을 \"이 사람\", \"그 사람\"으로 지칭하지 않는다. 반드시 이름으로 쓴다. (조연을 문맥상 \"그 사람\"이라 하는 건 괜찮다)\n- 과묵한 인물의 대사 앞에 말줄임표(…)를 습관적으로 붙이지 않는다. 짧은 대답은 \"응.\", \"괜찮아.\"처럼 담백하게 쓰고, 정곡을 찔려 말문이 막힐 때, 사과·고백 직전의 머뭇거림, 빈 침묵 \"…\"에만 쓴다.\n- 문단 사이 불필요한 공백이나 문장 속 말줄임표를 흩뿌리지 않는다.\n- 대사로만 사건을 때우지 않고 지문·묘사·심리를 갖춘다. 다만 묘사를 위한 묘사로 분량을 늘리지 않는다.\n- 장 구분이 필요하면 \"## 1\", \"## 2\"처럼 소제목 줄을 쓴다.\n\n6. 적절성\n원작 인물이 미성년이거나 미성년으로 볼 수 있으면 성적·선정적 묘사를 하지 않는다. 로맨스는 정서와 관계 중심으로 그린다.\n\n7. 출력 전 스스로 점검 (점검 내용은 출력하지 않는다)\n같은 감정 비트 반복이 없는지, 매 씬이 직전과 다른지, 주연을 \"이 사람/그 사람\"으로 부른 곳이 없는지, 말줄임표가 꼭 필요한 곳에만 있는지, 분량용 문장이 없는지, 소품이 처음과 끝을 묶는지, 조연 기능이 겹치지 않는지, 호칭·말투를 정확히 지켰는지, 마음고생이 인물을 실제로 변화시켰는지 확인한다.";
 const DEFAULTS={
-  theme:"system", mode:null, apiKey:"", model:"", temperature:1, pending:null,
+  theme:"system", mode:null, fanficPrompt:FANFIC_DEFAULT, apiKey:"", model:"", temperature:1, pending:null,
   basePrompt:"한국어 소설로 써줘. 대사는 큰따옴표로 쓰고, 장면이 바뀌면 빈 줄 다음에 * * * 한 줄을 넣어줘.\n분량을 채우기 위한 반복 묘사나 요약식 서술은 하지 말고, 장면과 감정 변화의 밀도를 우선해줘.\n설정집에 적힌 인물의 성격과 호칭을 반드시 지키고, 캐릭터 붕괴 없이 써줘.\n설명이나 인사말 없이 소설 본문만 출력해줘.",
   templates:[
     {id:"t_short",name:"단편",body:"{{인물 1}}와(과) {{인물 2}}이(가) {{장소·상황}}에서 {{사건}} 이야기. 분위기는 {{분위기}}, 시점은 {{시점}}."},
@@ -199,7 +201,7 @@ const DEFAULTS={
     {id:"t_daily",name:"일상",body:"{{등장인물}}의 {{일상 상황}}을 그린 짧은 이야기. 분위기는 {{분위기}}."},
     {id:"t_cont",name:"이어 쓰기",body:"앞 이야기에 바로 이어서, {{다음 전개}}.",cont:true}
   ],
-  works:[], activeWork:null, activeTemplate:"t_short", length:"mid", drafts:{}, scene:"", contStory:null,
+  works:[], activeWork:null, activeTemplate:"t_short", words:1500, drafts:{}, scene:"", contStory:null,
   stories:[], lastRead:null,
   reader:{bg:"theme",font:"serif",size:18,lh:1.9}
 };
@@ -278,7 +280,7 @@ function vLibrary(){
 }
 
 /* ───────── 쓰기 ───────── */
-const LEN={short:["짧게","약 3,000자"],mid:["보통","약 6,000자"],long:["길게","약 12,000자"]};
+const WMIN=50, WMAX=8000;
 function curTpl(){ return S.templates.find(t=>t.id===S.activeTemplate)||S.templates[0] }
 function tplHTML(t){
   const d=S.drafts[t.id]||{};
@@ -293,7 +295,7 @@ function vWrite(){
     ${t.cont?`<select class="line-input" id="contStory" aria-label="이어 쓸 이야기">${contOpts?`<option value="">이어 쓸 이야기 고르기</option>${contOpts}`:`<option value="">서재에 이야기가 없어요</option>`}</select>`:""}
     <div class="tpl" id="tpl">${tplHTML(t)}</div>
     <input class="line-input" id="scene" placeholder="넣고 싶은 장면" value="${esc(S.scene)}" autocomplete="off">
-    <div class="lengths">${Object.entries(LEN).map(([k,[l]])=>`<button data-act="len" data-k="${k}" aria-pressed="${S.length===k}">${l}</button>`).join("")}</div>
+    <label class="words"><span>분량</span><input id="words" type="text" inputmode="numeric" pattern="[0-9]*" value="${S.words}" aria-label="분량(어절)" autocomplete="off"><span>어절</span></label>
   </div>
   <div class="cta-wrap"><button class="cta" data-act="generate">${ic("spark")}${S.mode==="app"?"Gemini 앱으로 보내기":"Gemini로 쓰기"}</button></div>`;
 }
@@ -305,6 +307,9 @@ function bindWrite(){
     el.addEventListener("paste",e=>{ e.preventDefault(); document.execCommand("insertText",false,(e.clipboardData.getData("text")||"").replace(/\s+/g," ")) });
   });
   app.querySelector("#scene").addEventListener("input",e=>{ S.scene=e.target.value; save() });
+  const wi=app.querySelector("#words");
+  wi.addEventListener("input",()=>{ wi.value=wi.value.replace(/[^0-9]/g,"").slice(0,5); const n=+wi.value; if(n>=WMIN&&n<=WMAX){ S.words=n; save() } });
+  wi.addEventListener("blur",()=>{ let n=+wi.value||S.words; n=Math.min(WMAX,Math.max(WMIN,n)); if(+wi.value&&+wi.value!==n) toast(`분량은 ${WMIN}~${WMAX.toLocaleString()}어절 사이로 정할 수 있어요`); S.words=n; wi.value=n; save() });
   app.querySelector("#contStory")?.addEventListener("change",e=>{ S.contStory=e.target.value||null; save() });
 }
 
@@ -318,6 +323,7 @@ function vSetbook(){
     :`<div class="empty" style="padding-bottom:20px"><b>작품 설정을 저장해 두세요</b>원작 인물, 호칭 규칙, 세계관을 적어두면<br>쓸 때마다 자동으로 함께 보내져요.<br><button class="textbtn" data-act="newwork" style="margin-top:10px">작품 추가</button></div>`}
     <div class="cap">공통</div>
     <button class="row" data-act="editbase"><span>기본 프롬프트</span>${ic("chev")}</button>
+    <button class="row" data-act="editfanfic"><span>2차 창작 지침</span><span style="display:flex;align-items:center;gap:8px"><span class="val">${(S.fanficPrompt||"").trim()?"켜짐":"꺼짐"}</span>${ic("chev")}</span></button>
     <button class="row" data-act="tpllist"><span>템플릿</span><span style="display:flex;align-items:center;gap:6px"><span class="val">${S.templates.length}개</span>${ic("chev")}</span></button>
   </div>`;
 }
@@ -360,7 +366,6 @@ const ACT={
   libf(d){ libFilter=d.k; render() },
   open(d){ openReader(d.id) },
   tpl(d){ S.activeTemplate=d.id; save(); render() },
-  len(d){ S.length=d.k; save(); render() },
   pickwork(){
     const opts=[[null,"설정 없음"],...S.works.map(w=>[w.id,w.name])];
     sheet(opts.map(([id,n])=>`<button class="opt" data-id="${id??""}" aria-checked="${(S.activeWork||"")===(id||"")}">${esc(n)}${(S.activeWork||"")===(id||"")?ic("chev",0).replace(P.chev,'<path d="M5 12l5 5L20 7"/>'):""}</button>`).join("")+`<button class="opt" data-new="1" style="color:var(--ink3)">작품 추가</button>`,
@@ -376,6 +381,9 @@ const ACT={
   editfield(d){ const w=S.works.find(x=>x.id===d.id); const f=WF.find(x=>x[0]===d.k);
     fieldEditor(`${w.name} · ${f[1]}`,[{k:"v",l:f[1],v:w[d.k],multi:1,ph:f[2],h:360}],o=>{ w[d.k]=o.v; save(); return true }) },
   editbase(){ fieldEditor("기본 프롬프트",[{k:"v",l:"매번 자동으로 함께 보낼 지시",v:S.basePrompt,multi:1,h:360,hint:"모든 이야기에 공통으로 들어가요. 문체, 금지 사항, 출력 형식을 적어두세요."}],o=>{ S.basePrompt=o.v; save(); return true }) },
+  editfanfic(){ fieldEditor("2차 창작 지침",[{k:"v",l:"새 이야기를 시작할 때 자동으로 함께 보낼 지침",v:S.fanficPrompt,multi:1,h:420,hint:"이어 쓰기에는 들어가지 않아요. 내용을 모두 지우면 꺼져요."}],o=>{ S.fanficPrompt=o.v; save(); return true },
+    `<button class="textbtn" data-act="resetfanfic" style="margin-top:14px">기본 지침으로 되돌리기</button>`) },
+  resetfanfic(){ const ta=app.querySelector("#f_v"); if(ta){ ta.value=FANFIC_DEFAULT; toast("기본 지침을 채웠어요. 저장을 눌러야 적용돼요",2200) } },
   tpllist(){ push({title:"템플릿",noSave:1,html:()=>S.templates.map(t=>`<button class="row" data-act="edittpl" data-id="${t.id}"><span>${esc(t.name)}</span>${ic("chev")}</button>`).join("")+`<button class="textbtn" data-act="newtpl" style="margin-top:14px">템플릿 추가</button><p class="hint">빈칸은 {{이름}}처럼 중괄호 두 개로 감싸면 돼요.</p>`}) },
   newtpl(){ tplEditor({id:uid(),name:"",body:"",isNew:1}) },
   edittpl(d){ tplEditor(S.templates.find(t=>t.id===d.id)) },
@@ -460,6 +468,11 @@ function buildPrompt(){
   const filled=t.body.replace(/\{\{(.+?)\}\}/g,(_,k)=>(d[k]||"").trim()||`(${k}: 자유롭게)`);
   const w=S.works.find(x=>x.id===S.activeWork);
   let sys=S.basePrompt.trim();
+  if(!t.cont && (S.fanficPrompt||"").trim()){
+    sys+="\n\n"+S.fanficPrompt.trim();
+    const past=S.stories.filter(x=>(x.workId||null)===(w?.id||null)).slice(0,20).map(x=>"- "+x.title);
+    if(past.length) sys+=`\n\n[이전 작품 — 소재·구조가 겹치지 않게]\n${past.join("\n")}`;
+  }
   sys+="\n\n[출력 형식]\n첫 줄에 '# 제목' 형식으로 이 이야기의 제목을 쓰고, 빈 줄 다음에 본문을 써줘. 본문의 문단은 빈 줄로 구분해줘.";
   if(w){
     sys+=`\n\n[설정집: ${w.name}]`;
@@ -469,7 +482,7 @@ function buildPrompt(){
   }
   let user=`[요청]\n${filled}`;
   if(S.scene.trim()) user+=`\n\n[꼭 넣을 장면]\n${S.scene.trim()}`;
-  user+=`\n\n[분량]\n${LEN[S.length][1]} 내외.`;
+  user+=`\n\n[분량]\n약 ${S.words.toLocaleString()}어절(띄어쓰기로 나뉜 단위) 내외. 이 분량에 맞춰 장면을 구성해줘.`;
   let prev=null;
   if(t.cont){
     prev=S.stories.find(s=>s.id===S.contStory);
@@ -731,6 +744,7 @@ function cleanPaste(t){
   S={...structuredClone(DEFAULTS),...(saved||{})};
   S.reader={...DEFAULTS.reader,...S.reader};
   if(!saved){ tab="write" }
+  if(!(S.words>=WMIN)) S.words=1500;
   if(!S.mode) S.mode=S.apiKey?"api":"app";
   applyTheme(); render();
   if(S.pending){ tab="write"; render(); openPending(null) }
