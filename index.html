@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="이야기 공방">
-<meta name="theme-color" content="#FCFDFE" id="themeColor">
+<meta name="theme-color" content="#F7F7F5" id="themeColor">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <title>이야기</title>
@@ -15,25 +15,24 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@500;700&family=Noto+Serif+KR:wght@500;700&display=swap">
 <style>
-/* 미니멀 · 차가운 도화지 · 세이지 그린 윤곽 */
+/* 미니멀 · 옛 메모장 종이결 · 세이지 그린 윤곽 · 서재 중심(탭 없음) */
 :root{
-  --bg:#FCFDFE; --ink:#111518; --ink2:#454E55; --ink3:#7D878E; --line:#DCE2E6;
-  --accent:#2C6A5C; --fill:#EEF2F5; --sheet:#FCFDFE; --danger:#B3413A;
-  --grain:.32; --blend:multiply;
+  --bg:#F7F7F5; --ink:#141619; --ink2:#4A4F55; --ink3:#858B91; --line:#E2E2DE;
+  --accent:#2C6A5C; --fill:#EEEEEB; --sheet:#F9F9F7; --danger:#B3413A;
+  --grain:.5; --blend:normal;
   --sans:"Noto Sans KR","Apple SD Gothic Neo",system-ui,sans-serif;
   --serif:"Noto Serif KR","AppleMyungjo","Batang",serif;
   color-scheme:light;
 }
 :root[data-theme="dark"]{
-  --bg:#0E1215; --ink:#EEF2F4; --ink2:#B4BDC3; --ink3:#7C878E; --line:#232A2F;
-  --accent:#84C6B4; --fill:#161B1F; --sheet:#13181B; --danger:#E58A82;
-  --grain:.14; --blend:screen; color-scheme:dark;
+  --bg:#121416; --ink:#ECEEEF; --ink2:#B2B7BB; --ink3:#7B8287; --line:#25292C;
+  --accent:#84C6B4; --fill:#1A1D20; --sheet:#16191B; --danger:#E58A82;
+  --grain:.3; --blend:screen; color-scheme:dark;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
 body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-weight:500;font-size:16px;-webkit-font-smoothing:antialiased;overflow:hidden;overscroll-behavior:none}
-body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:999;opacity:var(--grain);mix-blend-mode:var(--blend);
-  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .5  0 0 0 0 .5  0 0 0 0 .5  0 0 0 .55 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>"),url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400'><filter id='f'><feTurbulence type='fractalNoise' baseFrequency='.012 .09' numOctaves='2' seed='7' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .5  0 0 0 0 .5  0 0 0 0 .5  0 0 0 .35 0'/></filter><rect width='100%25' height='100%25' filter='url(%23f)'/></svg>")}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:999;opacity:var(--grain);mix-blend-mode:var(--blend);background:url(paper.png) 0 0/256px 256px repeat}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 input,textarea,select{font:inherit;color:inherit;font-size:16px}
 .serif{font-family:var(--serif)}
@@ -46,10 +45,18 @@ input,textarea,select{font:inherit;color:inherit;font-size:16px}
 .scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 24px 24px}
 .icon{width:40px;height:40px;display:grid;place-items:center;color:var(--ink2);border-radius:20px}
 .icon svg{width:22px;height:22px}
-.tabbar{flex:none;display:flex;justify-content:space-around;padding:10px 36px calc(10px + env(safe-area-inset-bottom,0px));color:var(--ink3)}
-.tabbar button{width:56px;height:44px;display:grid;place-items:center}
-.tabbar button[aria-current="page"]{color:var(--accent)}
-.tabbar svg{width:25px;height:25px}
+.scroll{padding-bottom:calc(24px + env(safe-area-inset-bottom,0px))}
+.back{display:flex;align-items:center;gap:2px;color:var(--accent);font-size:16px;margin-left:-8px;padding:8px 8px 8px 0}
+.back svg{width:22px;height:22px}
+.headlinks{display:flex;align-items:center;gap:6px;color:var(--ink2);font-size:15px}
+.headlinks .tl{padding:8px 6px}
+.title{font-size:26px;font-weight:700;letter-spacing:-.6px;margin-top:8px}
+.row .sub{display:block;font-size:13px;color:var(--ink3);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .lft{min-width:0;flex:1}
+.memo-name{width:100%;border:0;background:transparent;outline:none;font-family:var(--serif);font-size:24px;font-weight:700;margin-top:8px;padding:4px 0}
+.memo-name::placeholder{color:var(--ink3)}
+.memo{width:100%;border:0;background:transparent;outline:none;resize:none;font-size:16px;line-height:1.95;margin-top:12px;min-height:60vh;word-break:keep-all}
+.memo::placeholder{color:var(--ink3)}
 
 .texttabs{display:flex;gap:20px;font-size:15px;color:var(--ink3);flex-wrap:wrap;row-gap:12px}
 .texttabs button{padding:4px 0;position:relative}
@@ -72,7 +79,7 @@ select.line-input{appearance:none;-webkit-appearance:none}
 .words input{width:5.5em;border:0;border-bottom:1px solid var(--line);background:transparent;padding:4px 0 6px;text-align:right;font-weight:700;color:var(--ink);outline:none;font-variant-numeric:tabular-nums}
 .words input:focus{border-bottom-color:var(--accent)}
 
-.cta-wrap{display:flex;justify-content:center;padding:14px 24px 6px;flex:none}
+.cta-wrap{display:flex;justify-content:center;padding:14px 24px calc(18px + env(safe-area-inset-bottom,0px));flex:none}
 .cta{display:inline-flex;align-items:center;gap:8px;height:48px;padding:0 26px;border-radius:24px;border:2px solid var(--accent);color:var(--accent);font-weight:700;font-size:16.5px}
 .cta svg{width:17px;height:17px}
 .cta:disabled{opacity:.4}
@@ -81,7 +88,7 @@ select.line-input{appearance:none;-webkit-appearance:none}
 .cap{font-size:13px;color:var(--ink2);font-weight:700;margin:32px 0 2px;display:flex;justify-content:space-between;align-items:center}
 .cap button{color:var(--ink3);font-weight:500;font-size:13px}
 .row{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:17px 0;border-bottom:1px solid var(--line);font-size:16.5px;text-align:left}
-.row .val{color:var(--ink3);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:55%}
+.row .val{color:var(--ink3);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:13em}
 .row svg{width:17px;height:17px;color:var(--ink3);flex:none}
 .dot{width:7px;height:7px;border-radius:4px;background:var(--accent);display:inline-block}
 .dot.off{background:var(--ink3)}
@@ -214,7 +221,7 @@ const P={
   book:'<path d="M4 5a2 2 0 012-2h12v16H6a2 2 0 00-2 2z"/><path d="M4 21V5"/>',
   pen:'<path d="M4 20h4L19 9l-4-4L4 16z"/>',
   doc:'<path d="M7 3h10v18H7z"/><path d="M10 8h4M10 12h4"/>',
-  gear:'<circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/>',
+  gear:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>',
   chev:'<path d="M9 6l6 6-6 6"/>', back:'<path d="M15 6l-6 6 6 6"/>',
   spark:'<path d="M12 3l2 7 7 2-7 2-2 7-2-7-7-2 7-2z"/>', plus:'<path d="M12 5v14M5 12h14"/>',
   moon:'<path d="M20 14.5A8 8 0 019.5 4a8 8 0 1010.5 10.5z"/>',
@@ -231,7 +238,7 @@ const mq=matchMedia("(prefers-color-scheme: dark)");
 function isDark(){ return S.theme==="dark"||(S.theme==="system"&&mq.matches) }
 function applyTheme(){
   document.documentElement.dataset.theme=isDark()?"dark":"light";
-  document.getElementById("themeColor").content=isDark()?"#0E1215":"#FCFDFE";
+  document.getElementById("themeColor").content=isDark()?"#121416":"#F7F7F5";
 }
 mq.addEventListener?.("change",()=>{ if(S&&S.theme==="system"){applyTheme()} });
 
@@ -240,10 +247,7 @@ const app=document.getElementById("app");
 let tab="library";
 let stack=[]; // 편집 화면 스택
 function toast(msg,ms=2600){ const t=document.createElement("div");t.className="toast";t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),ms) }
-function tabbar(){
-  const t=[["library","book","서재"],["write","pen","쓰기"],["setbook","doc","설정집"],["prefs","gear","설정"]];
-  return `<nav class="tabbar">${t.map(([k,i,l])=>`<button data-tab="${k}" aria-label="${l}" ${tab===k?'aria-current="page"':""}>${ic(i)}</button>`).join("")}</nav>`;
-}
+function backBtn(label="서재",act='data-tab="library"'){ return `<button class="back" ${act}>${ic("back")}${label}</button>` }
 function sheet(html,onClick){
   const s=document.createElement("div");s.className="scrim";
   s.innerHTML=`<div class="sheet" role="dialog"><div class="grab"></div>${html}</div>`;
@@ -253,12 +257,12 @@ function sheet(html,onClick){
 function render(){
   if(stack.length){ app.innerHTML=renderEditor(stack[stack.length-1]); return }
   const v={library:vLibrary,write:vWrite,setbook:vSetbook,prefs:vPrefs}[tab]();
-  app.innerHTML=`<section class="view">${v}</section>${tabbar()}`;
+  app.innerHTML=`<section class="view">${v}</section>`;
   if(tab==="write") bindWrite();
 }
 app.addEventListener("click",e=>{
   const b=e.target.closest("[data-tab],[data-act]"); if(!b) return;
-  if(b.dataset.tab){ tab=b.dataset.tab; stack=[]; render(); return }
+  if(b.dataset.tab){ tab=b.dataset.tab; stack=[]; render(); app.querySelector(".scroll")?.scrollTo(0,0); return }
   ACT[b.dataset.act]?.(b.dataset,b,e);
 });
 
@@ -270,13 +274,14 @@ function vLibrary(){
   const list=S.stories.filter(s=>libFilter==="all"||s.workId===libFilter||(libFilter==="none"&&!s.workId));
   const usedWorks=[...new Set(S.stories.map(s=>s.workId||"none"))];
   const filters=[["all","전체"],...usedWorks.map(w=>[w,w==="none"?"설정 없음":workName(w)])];
-  return `<div class="head"><div class="h1">서재</div><div style="display:flex;gap:4px"><button class="icon" data-act="theme" aria-label="화면 모드 바꾸기">${ic(isDark()?"sun":"moon")}</button></div></div>
+  return `<div class="head"><div class="h1">서재</div><div class="headlinks"><button class="tl" data-tab="setbook">설정집</button><button class="icon" data-tab="prefs" aria-label="설정">${ic("gear")}</button></div></div>
   <div class="scroll">
     ${now?`<button class="now" data-act="open" data-id="${now.id}"><div class="k">읽는 중</div><div class="t">${esc(now.title)}</div><div class="prog"><i style="width:${Math.max(2,now.progress*100)}%"></i></div></button>`:""}
     ${S.stories.length?`<div class="texttabs" style="margin:26px 0 6px">${filters.map(([k,l])=>`<button data-act="libf" data-k="${k}" aria-pressed="${libFilter===k}">${esc(l)}</button>`).join("")}</div>
     ${list.map(s=>`<button class="item" data-act="open" data-id="${s.id}"><div class="top"><span class="t">${esc(s.title)}</span><span class="w">${esc(s.workId?workName(s.workId):"")}</span></div><div class="prog ${s.progress>=0.999?"done":""}"><i style="width:${Math.max(s.progress>0?2:0,s.progress*100)}%"></i></div></button>`).join("")}`
-    :`<div class="empty"><b>아직 이야기가 없어요</b>쓰기 탭에서 빈칸을 채우고<br>Gemini로 첫 이야기를 써보세요.</div>`}
-  </div>`;
+    :`<div class="empty"><b>아직 이야기가 없어요</b>아래 새 이야기에서 빈칸을 채우고<br>Gemini로 첫 이야기를 써보세요.</div>`}
+  </div>
+  <div class="cta-wrap"><button class="cta" data-tab="write">${ic("plus")}새 이야기</button></div>`;
 }
 
 /* ───────── 쓰기 ───────── */
@@ -289,9 +294,10 @@ function tplHTML(t){
 function vWrite(){
   const t=curTpl();
   const contOpts=S.stories.map(s=>`<option value="${s.id}" ${S.contStory===s.id?"selected":""}>${esc(s.title)}</option>`).join("");
-  return `<div class="head"><div class="h1">새 이야기</div><button class="workpick" data-act="pickwork"><span>${esc(S.activeWork?workName(S.activeWork):"설정 없음")}</span>${ic("chev")}</button></div>
+  return `<div class="head">${backBtn()}<button class="workpick" data-act="pickwork"><span>${esc(S.activeWork?workName(S.activeWork):"설정 없음")}</span>${ic("chev")}</button></div>
   <div class="scroll">
-    <div class="texttabs" style="margin-top:28px">${S.templates.map(x=>`<button data-act="tpl" data-id="${x.id}" aria-pressed="${x.id===t.id}">${esc(x.name)}</button>`).join("")}</div>
+    <div class="title">새 이야기</div>
+    <div class="texttabs" style="margin-top:24px">${S.templates.map(x=>`<button data-act="tpl" data-id="${x.id}" aria-pressed="${x.id===t.id}">${esc(x.name)}</button>`).join("")}</div>
     ${t.cont?`<select class="line-input" id="contStory" aria-label="이어 쓸 이야기">${contOpts?`<option value="">이어 쓸 이야기 고르기</option>${contOpts}`:`<option value="">서재에 이야기가 없어요</option>`}</select>`:""}
     <div class="tpl" id="tpl">${tplHTML(t)}</div>
     <input class="line-input" id="scene" placeholder="넣고 싶은 장면" value="${esc(S.scene)}" autocomplete="off">
@@ -314,25 +320,42 @@ function bindWrite(){
 }
 
 /* ───────── 설정집 ───────── */
-const WF=[["chars","등장인물","이름, 나이, 성격, 말투, 외모 등"],["relations","관계 · 호칭","서로 부르는 호칭, 관계, 감정선"],["world","세계관","배경, 시점, 원작 진행 상황, 지켜야 할 것과 금지 사항"]];
+function memoPreview(w){ const l=(w.memo||"").split("\n").map(x=>x.trim()).filter(x=>x&&!/^\[.*\]$/.test(x)); return l.slice(0,2).join(" · ")||"아직 비어 있어요" }
 function vSetbook(){
-  return `<div class="head"><div class="h1">설정집</div><button class="icon" data-act="newwork" aria-label="작품 추가">${ic("plus")}</button></div>
+  return `<div class="head">${backBtn()}<button class="icon" data-act="newwork" aria-label="작품 추가">${ic("plus")}</button></div>
   <div class="scroll">
-    ${S.works.length?S.works.map(w=>`<div class="cap"><span>${esc(w.name)}</span><button data-act="editwork" data-id="${w.id}">편집</button></div>
-      ${WF.map(([k,l])=>`<button class="row" data-act="editfield" data-id="${w.id}" data-k="${k}"><span>${l}</span><span style="display:flex;align-items:center;gap:6px;min-width:0"><span class="val">${esc((w[k]||"").split("\n")[0])}</span>${ic("chev")}</span></button>`).join("")}`).join("")
-    :`<div class="empty" style="padding-bottom:20px"><b>작품 설정을 저장해 두세요</b>원작 인물, 호칭 규칙, 세계관을 적어두면<br>쓸 때마다 자동으로 함께 보내져요.<br><button class="textbtn" data-act="newwork" style="margin-top:10px">작품 추가</button></div>`}
-    <div class="cap">공통</div>
+    <div class="title">설정집</div>
+    ${S.works.length?`<div class="cap">작품</div>${S.works.map(w=>`<button class="row" data-act="editwork" data-id="${w.id}"><span class="lft"><span class="serif" style="font-weight:700">${esc(w.name||"이름 없는 작품")}</span><span class="sub">${esc(memoPreview(w))}</span></span>${ic("chev")}</button>`).join("")}`
+    :`<div class="empty" style="padding:40px 0 10px"><b>작품 설정을 저장해 두세요</b>원작, 인물, 호칭, 금지 사항을 메모처럼 적어두면<br>쓸 때마다 자동으로 함께 보내져요.<br><button class="textbtn" data-act="newwork" style="margin-top:10px">작품 추가</button></div>`}
+    <div class="cap">모든 이야기에 공통</div>
     <button class="row" data-act="editbase"><span>기본 프롬프트</span>${ic("chev")}</button>
     <button class="row" data-act="editfanfic"><span>2차 창작 지침</span><span style="display:flex;align-items:center;gap:8px"><span class="val">${(S.fanficPrompt||"").trim()?"켜짐":"꺼짐"}</span>${ic("chev")}</span></button>
     <button class="row" data-act="tpllist"><span>템플릿</span><span style="display:flex;align-items:center;gap:6px"><span class="val">${S.templates.length}개</span>${ic("chev")}</span></button>
   </div>`;
 }
+const MEMO_PH="원작: 푸른 등대 (원작 4권 이후 시점)\n주연: 서하윤, 한도겸\n서하윤 — 등대지기 견습생. 말수가 적고 계산적.\n한도겸 — 표류해 온 기상학자. 능청스럽고 다정함.\n호칭: 하윤 → 도겸 \"선배\" / 도겸 → 하윤 \"서하윤\"\n말투: 둘 다 반말.\n배경: 1990년대 남해의 작은 섬.\n금지: 원작에서 죽은 인물 등장 금지.";
+function memoEditor(w,isNew){
+  push({title:"",memo:true,html:()=>`
+    <input class="memo-name" id="m_name" value="${esc(w.name)}" placeholder="작품 이름" autocomplete="off">
+    <textarea class="memo" id="m_memo" placeholder="${esc(MEMO_PH)}">${esc(w.memo||"")}</textarea>
+    <button class="danger" data-act="delwork" data-id="${w.id}" style="font-weight:500;font-size:14px">작품 삭제</button>`,
+    after:()=>{
+      const n=app.querySelector("#m_name"), m=app.querySelector("#m_memo");
+      const grow=()=>{ m.style.height="auto"; m.style.height=Math.max(m.scrollHeight,innerHeight*.6)+"px" };
+      n.addEventListener("input",()=>{ w.name=n.value.trim(); save() });
+      m.addEventListener("input",()=>{ w.memo=m.value; grow(); save() });
+      grow(); if(isNew) n.focus();
+    },
+    leave:()=>{ if(!w.name.trim()&&!(w.memo||"").trim()){ S.works=S.works.filter(x=>x!==w); if(S.activeWork===w.id) S.activeWork=null; save() } else if(!w.name.trim()){ w.name="이름 없는 작품"; save() } }
+  });
+}
 
 /* ───────── 설정 ───────── */
 function vPrefs(){
   const th={system:"시스템",light:"라이트",dark:"다크"};
-  return `<div class="head"><div class="h1">설정</div></div>
+  return `<div class="head">${backBtn()}</div>
   <div class="scroll">
+    <div class="title">설정</div>
     <div class="cap">Gemini</div>
     <div class="row" style="cursor:default"><span>쓰는 방식</span><div class="seg"><button data-act="setmode" data-k="app" aria-pressed="${S.mode==="app"}">앱 붙여넣기</button><button data-act="setmode" data-k="api" aria-pressed="${S.mode==="api"}">API</button></div></div>
     <button class="row" data-act="gemini"><span>API 연결</span><span style="display:flex;align-items:center;gap:8px"><span class="val">${S.apiKey?esc(S.model?S.model.replace("models/",""):"모델 미선택"):"연결 안 됨"}</span><i class="dot ${S.apiKey&&S.model?"":"off"}"></i>${ic("chev")}</span></button>
@@ -347,11 +370,13 @@ function vPrefs(){
 
 /* ───────── 편집 화면 ───────── */
 function renderEditor(ed){
+  if(ed.memo){ const prev=stack.length>1?"뒤로":(tab==="setbook"?"설정집":"뒤로");
+    return `<section class="view"><div class="head">${backBtn(prev,'data-act="edback"')}<button class="textbtn" data-act="edback">완료</button></div><div class="scroll">${ed.html()}</div></section>` }
   return `<section class="view"><div class="head" style="padding-left:10px;padding-right:14px"><button class="icon" data-act="edback" aria-label="뒤로">${ic("back")}</button><div style="font-weight:700;font-size:16px;flex:1;text-align:center">${esc(ed.title)}</div>${ed.noSave?'<span style="width:40px"></span>':`<button class="textbtn" data-act="edsave">저장</button>`}</div>
   <div class="scroll">${ed.html()}</div></section>`;
 }
 function push(ed){ stack.push(ed); render(); setTimeout(()=>ed.after?.(),0) }
-function pop(){ stack.pop(); render(); const top=stack[stack.length-1]; if(top) setTimeout(()=>top.after?.(),0) }
+function pop(){ const ed=stack.pop(); ed?.leave?.(); render(); const top=stack[stack.length-1]; if(top) setTimeout(()=>top.after?.(),0) }
 
 function fieldEditor(title,fields,onSave,extra){
   push({title,html:()=>fields.map(f=>`<div class="field"><label for="f_${f.k}">${f.l}</label>${f.multi?`<textarea id="f_${f.k}" placeholder="${esc(f.ph||"")}" style="min-height:${f.h||220}px">${esc(f.v||"")}</textarea>`:`<input id="f_${f.k}" placeholder="${esc(f.ph||"")}" value="${esc(f.v||"")}" autocomplete="off">`}${f.hint?`<p class="hint">${f.hint}</p>`:""}</div>`).join("")+(extra||""),
@@ -360,7 +385,6 @@ function fieldEditor(title,fields,onSave,extra){
 
 /* ───────── 동작 ───────── */
 const ACT={
-  theme(){ S.theme=isDark()?"light":"dark"; applyTheme(); save(); render() },
   setmode(d){ S.mode=d.k; save(); render() },
   settheme(d){ S.theme=d.k; applyTheme(); save(); render() },
   libf(d){ libFilter=d.k; render() },
@@ -369,17 +393,13 @@ const ACT={
   pickwork(){
     const opts=[[null,"설정 없음"],...S.works.map(w=>[w.id,w.name])];
     sheet(opts.map(([id,n])=>`<button class="opt" data-id="${id??""}" aria-checked="${(S.activeWork||"")===(id||"")}">${esc(n)}${(S.activeWork||"")===(id||"")?ic("chev",0).replace(P.chev,'<path d="M5 12l5 5L20 7"/>'):""}</button>`).join("")+`<button class="opt" data-new="1" style="color:var(--ink3)">작품 추가</button>`,
-      (e,close)=>{ const b=e.target.closest(".opt"); if(!b) return; close(); if(b.dataset.new){ tab="setbook"; render(); ACT.newwork(); return } S.activeWork=b.dataset.id||null; save(); render() });
+      (e,close)=>{ const b=e.target.closest(".opt"); if(!b) return; close(); if(b.dataset.new){ tab="setbook"; stack=[]; render(); ACT.newwork(); return } S.activeWork=b.dataset.id||null; save(); render() });
   },
-  newwork(){ fieldEditor("새 작품",[{k:"name",l:"작품 이름",ph:"예: 푸른 등대"}],o=>{ if(!o.name.trim()){toast("작품 이름을 적어주세요");return false} const w={id:uid(),name:o.name.trim(),chars:"",relations:"",world:""}; S.works.push(w); if(!S.activeWork) S.activeWork=w.id; save(); return true }) },
-  editwork(d){ const w=S.works.find(x=>x.id===d.id);
-    fieldEditor("작품 편집",[{k:"name",l:"작품 이름",v:w.name}],o=>{ if(!o.name.trim()){toast("작품 이름을 적어주세요");return false} w.name=o.name.trim(); save(); return true },
-      `<button class="danger" data-act="delwork" data-id="${w.id}">작품 삭제</button>`) },
+  newwork(){ const w={id:uid(),name:"",memo:""}; S.works.push(w); if(!S.activeWork) S.activeWork=w.id; save(); memoEditor(w,true) },
+  editwork(d){ const w=S.works.find(x=>x.id===d.id); if(w) memoEditor(w,false) },
   delwork(d,b){
     if(b.dataset.armed!=="1"){ b.dataset.armed="1"; b.textContent="한 번 더 누르면 삭제돼요 (이야기는 남아요)"; return }
     S.works=S.works.filter(w=>w.id!==d.id); if(S.activeWork===d.id) S.activeWork=null; save(); stack=[]; render(); toast("작품을 삭제했어요") },
-  editfield(d){ const w=S.works.find(x=>x.id===d.id); const f=WF.find(x=>x[0]===d.k);
-    fieldEditor(`${w.name} · ${f[1]}`,[{k:"v",l:f[1],v:w[d.k],multi:1,ph:f[2],h:360}],o=>{ w[d.k]=o.v; save(); return true }) },
   editbase(){ fieldEditor("기본 프롬프트",[{k:"v",l:"매번 자동으로 함께 보낼 지시",v:S.basePrompt,multi:1,h:360,hint:"모든 이야기에 공통으로 들어가요. 문체, 금지 사항, 출력 형식을 적어두세요."}],o=>{ S.basePrompt=o.v; save(); return true }) },
   editfanfic(){ fieldEditor("2차 창작 지침",[{k:"v",l:"새 이야기를 시작할 때 자동으로 함께 보낼 지침",v:S.fanficPrompt,multi:1,h:420,hint:"이어 쓰기에는 들어가지 않아요. 내용을 모두 지우면 꺼져요."}],o=>{ S.fanficPrompt=o.v; save(); return true },
     `<button class="textbtn" data-act="resetfanfic" style="margin-top:14px">기본 지침으로 되돌리기</button>`) },
@@ -476,9 +496,7 @@ function buildPrompt(){
   sys+="\n\n[출력 형식]\n첫 줄에 '# 제목' 형식으로 이 이야기의 제목을 쓰고, 빈 줄 다음에 본문을 써줘. 본문의 문단은 빈 줄로 구분해줘.";
   if(w){
     sys+=`\n\n[설정집: ${w.name}]`;
-    if(w.chars.trim()) sys+=`\n<등장인물>\n${w.chars.trim()}`;
-    if(w.relations.trim()) sys+=`\n<관계·호칭>\n${w.relations.trim()}`;
-    if(w.world.trim()) sys+=`\n<세계관>\n${w.world.trim()}`;
+    if((w.memo||"").trim()) sys+=`\n${w.memo.trim()}`;
   }
   let user=`[요청]\n${filled}`;
   if(S.scene.trim()) user+=`\n\n[꼭 넣을 장면]\n${S.scene.trim()}`;
@@ -547,7 +565,7 @@ function splitTitle(text){
 function finishGen(note){
   const {title,body}=splitTitle(cleanPaste(gen.text));
   const s={id:uid(),title:title||(gen.prev?gen.prev.title+" (이어서)":"제목 없는 이야기"),text:body.trim(),workId:gen.workId,tpl:gen.tplName,createdAt:Date.now(),progress:0,page:0,prevId:gen.prev?.id||null};
-  S.stories.unshift(s); S.lastRead=s.id; save(); gen=null;
+  S.stories.unshift(s); S.lastRead=s.id; save(); gen=null; tab="library"; stack=[]; render();
   closeLive(); openReader(s.id); if(note) toast(note,3200);
 }
 
@@ -644,7 +662,7 @@ addEventListener("resize",()=>{ clearTimeout(window.__rz); window.__rz=setTimeou
 
 function readerSheet(){
   const r=S.reader;
-  const bgs=[["theme",isDark()?"#0E1215":"#FCFDFE","기본"],["gray","#E7ECEF","회색"],["dim","#1A2024","어둡게"],["black","#000000","검정"]];
+  const bgs=[["theme",isDark()?"#121416":"#F7F7F5","기본"],["gray","#E7ECEF","회색"],["dim","#1A2024","어둡게"],["black","#000000","검정"]];
   const s=sheet(`<div class="rsheet">
     <div class="swatches" role="radiogroup" aria-label="배경">${bgs.map(([k,c,l])=>`<button class="sw" data-bg="${k}" aria-label="${l}" aria-checked="${r.bg===k}" style="background:${c}"></button>`).join("")}</div>
     <div class="seg" role="group" aria-label="글꼴"><button data-font="serif" class="serif" aria-pressed="${r.font==="serif"}">명조</button><button data-font="sans" aria-pressed="${r.font==="sans"}">고딕</button></div>
@@ -743,7 +761,14 @@ function cleanPaste(t){
   const saved=await store.get();
   S={...structuredClone(DEFAULTS),...(saved||{})};
   S.reader={...DEFAULTS.reader,...S.reader};
-  if(!saved){ tab="write" }
+  for(const w of S.works){
+    if(w.memo===undefined){
+      const parts=[["등장인물",w.chars],["관계 · 호칭",w.relations],["세계관",w.world]].filter(([,v])=>(v||"").trim());
+      w.memo=parts.map(([k,v])=>`[${k}]\n${v.trim()}`).join("\n\n");
+      delete w.chars; delete w.relations; delete w.world;
+    }
+  }
+  if(saved) save();
   if(!(S.words>=WMIN)) S.words=1500;
   if(!S.mode) S.mode=S.apiKey?"api":"app";
   applyTheme(); render();
