@@ -13,26 +13,27 @@
 <title>이야기</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@500;700&family=Noto+Serif+KR:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&display=swap">
+<link rel="stylesheet" href="fonts/pretendardvariable-dynamic-subset.css">
 <style>
-/* 미니멀 · 옛 메모장 종이결 · 세이지 그린 윤곽 · 서재 중심(탭 없음) */
+/* 미니멀 · 고운 그레인 · 세이지 그린 윤곽 · 서재 중심(탭 없음) */
 :root{
   --bg:#F7F7F5; --ink:#141619; --ink2:#4A4F55; --ink3:#858B91; --line:#E2E2DE;
   --accent:#2C6A5C; --fill:#EEEEEB; --sheet:#F9F9F7; --danger:#B3413A;
-  --grain:.5; --blend:normal;
-  --sans:"Noto Sans KR","Apple SD Gothic Neo",system-ui,sans-serif;
+  --grain:.18; --blend:normal;
+  --sans:"Pretendard Variable",Pretendard,-apple-system,"Apple SD Gothic Neo",system-ui,sans-serif;
   --serif:"Noto Serif KR","AppleMyungjo","Batang",serif;
   color-scheme:light;
 }
 :root[data-theme="dark"]{
   --bg:#121416; --ink:#ECEEEF; --ink2:#B2B7BB; --ink3:#7B8287; --line:#25292C;
   --accent:#84C6B4; --fill:#1A1D20; --sheet:#16191B; --danger:#E58A82;
-  --grain:.3; --blend:screen; color-scheme:dark;
+  --grain:.14; --blend:normal; color-scheme:dark;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
 body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-weight:500;font-size:16px;-webkit-font-smoothing:antialiased;overflow:hidden;overscroll-behavior:none}
-body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:999;opacity:var(--grain);mix-blend-mode:var(--blend);background:url(paper.png) 0 0/256px 256px repeat}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:999;opacity:var(--grain);mix-blend-mode:var(--blend);background:url(grain.png) 0 0/128px 128px repeat}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 input,textarea,select{font:inherit;color:inherit;font-size:16px}
 .serif{font-family:var(--serif)}
@@ -563,8 +564,10 @@ function splitTitle(text){
   return {title:"",body:text};
 }
 function finishGen(note){
+  const lb=document.getElementById("liveText");
+  const readAt=lb&&lb.scrollHeight>lb.clientHeight?Math.min(1,lb.scrollTop/lb.scrollHeight):0;
   const {title,body}=splitTitle(cleanPaste(gen.text));
-  const s={id:uid(),title:title||(gen.prev?gen.prev.title+" (이어서)":"제목 없는 이야기"),text:body.trim(),workId:gen.workId,tpl:gen.tplName,createdAt:Date.now(),progress:0,page:0,prevId:gen.prev?.id||null};
+  const s={id:uid(),title:title||(gen.prev?gen.prev.title+" (이어서)":"제목 없는 이야기"),text:body.trim(),workId:gen.workId,tpl:gen.tplName,createdAt:Date.now(),progress:readAt,page:0,prevId:gen.prev?.id||null};
   S.stories.unshift(s); S.lastRead=s.id; save(); gen=null; tab="library"; stack=[]; render();
   closeLive(); openReader(s.id); if(note) toast(note,3200);
 }
@@ -599,10 +602,8 @@ let liveRaf=0;
 function updateLive(){
   if(liveRaf) return; liveRaf=requestAnimationFrame(()=>{ liveRaf=0;
     const box=document.getElementById("liveText"); if(!box||!gen) return;
-    const near=box.scrollHeight-box.scrollTop-box.clientHeight<120;
     const {title,body}=splitTitle(gen.text.includes("\n")?gen.text:gen.text+"\n");
     box.innerHTML=(title?`<p class="ttl">${esc(title)}</p>`:"")+bodyHTML(body);
-    if(near) box.scrollTop=box.scrollHeight;
   });
 }
 function closeLive(){ document.getElementById("liveReader")?.remove() }
