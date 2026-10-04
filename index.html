@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#F7F7F5" id="themeColor">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
-<title>이야기</title>
+<title>이야기 공방</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&display=swap">
@@ -181,6 +181,15 @@ svg{flex:none}
 .minirow{display:flex;gap:18px;margin-top:20px;align-items:center;flex-wrap:wrap}
 .ghost{display:inline-flex;align-items:center;gap:6px;height:38px;padding:0 16px;border-radius:19px;border:1.5px solid var(--line);font-size:14.5px;color:var(--ink);text-decoration:none}
 .ghost svg{width:15px;height:15px}
+.reader.scrollmode .rbox{left:0;right:0;top:0;bottom:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:calc(env(safe-area-inset-top,0px) + 56px) var(--rp) calc(env(safe-area-inset-bottom,0px) + 70px)}
+.reader.scrollmode .rflow{height:auto;columns:auto!important;width:auto!important;transform:none!important;transition:none}
+.reader.scrollmode .tapzone{display:none}
+.reader.scrollmode .rfoot{left:0;right:0;bottom:0;padding:18px var(--rp) calc(env(safe-area-inset-bottom,0px) + 22px);background:linear-gradient(transparent,var(--rbg) 45%);pointer-events:none}
+.rend{display:none;text-align:center;padding:48px 0 20px;font-family:var(--sans)}
+.reader.scrollmode .rend{display:block}
+.rend .k{font-size:13px;color:var(--rmut);letter-spacing:.3em;margin-bottom:22px}
+.rend .cta{border-color:var(--accent);color:var(--accent)}
+.rend .textbtn{display:block;margin:14px auto 0;color:var(--rmut)}
 .rsheet .acts{display:flex;justify-content:space-between;margin-top:26px;padding-top:6px;border-top:1px solid var(--line)}
 </style>
 </head>
@@ -211,7 +220,7 @@ const DEFAULTS={
   ],
   works:[], activeWork:null, activeTemplate:"t_short", words:1500, drafts:{}, scene:"", contStory:null,
   stories:[], lastRead:null,
-  reader:{bg:"theme",font:"serif",size:18,lh:1.9}
+  reader:{bg:"theme",font:"serif",size:18,lh:1.9,flow:"page"}
 };
 let S=null;
 let saveT=null;
@@ -247,7 +256,7 @@ mq.addEventListener?.("change",()=>{ if(S&&S.theme==="system"){applyTheme()} });
 const app=document.getElementById("app");
 let tab="library";
 let stack=[]; // 편집 화면 스택
-function toast(msg,ms=2600){ const t=document.createElement("div");t.className="toast";t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),ms) }
+function toast(msg,ms=2600){ document.querySelectorAll(".toast").forEach(x=>x.remove()); const t=document.createElement("div");t.className="toast";t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),ms) }
 function backBtn(label="서재",act='data-tab="library"'){ return `<button class="back" ${act}>${ic("back")}${label}</button>` }
 function sheet(html,onClick){
   const s=document.createElement("div");s.className="scrim";
@@ -286,7 +295,9 @@ function vLibrary(){
 }
 
 /* ───────── 쓰기 ───────── */
-const WMIN=50, WMAX=8000;
+const WMIN=50, WMAX=30000;
+const CHUNK=3500; // 한 번의 응답에 기대하는 어절 수
+function wordCount(t){ const b=splitTitle(t||"").body.trim(); return b?b.split(/\s+/).length:0 }
 function curTpl(){ return S.templates.find(t=>t.id===S.activeTemplate)||S.templates[0] }
 function tplHTML(t){
   const d=S.drafts[t.id]||{};
@@ -459,7 +470,7 @@ function geminiEditor(){
     <div class="field"><label for="f_temp">창의성 <span id="tv" style="color:var(--ink3);font-weight:500">${S.temperature}</span></label><input id="f_temp" type="range" min="0" max="2" step="0.1" value="${S.temperature}" style="accent-color:var(--accent);border:0" oninput="document.getElementById('tv').textContent=this.value">
       <p class="hint">낮을수록 안정적이고, 높을수록 예측하기 어려운 전개가 나와요.</p></div>`,
     after:()=>{ if(modelCache) fillModels(modelCache) },
-    save:()=>{ const ck=cleanKey(app.querySelector("#f_key").value); if(ck.err){ toast(ck.err,3600); return false } S.apiKey=ck.key; S.model=app.querySelector("#f_model").value; S.temperature=+app.querySelector("#f_temp").value; save(); if(S.apiKey&&!S.model){ toast("모델을 골라주세요"); return false } return true }
+    save:()=>{ const ck=cleanKey(app.querySelector("#f_key").value); if(ck.err){ toast(ck.err,3600); return false } S.apiKey=ck.key; S.model=app.querySelector("#f_model").value; { const mm=(modelCache||[]).find(m=>m.name===S.model); if(mm?.outputTokenLimit) S.modelOut=mm.outputTokenLimit } S.temperature=+app.querySelector("#f_temp").value; save(); if(S.apiKey&&!S.model){ toast("모델을 골라주세요"); return false } return true }
   });
 }
 ACT.loadmodels=async(d,b)=>{
@@ -501,7 +512,8 @@ function buildPrompt(){
   }
   let user=`[요청]\n${filled}`;
   if(S.scene.trim()) user+=`\n\n[꼭 넣을 장면]\n${S.scene.trim()}`;
-  user+=`\n\n[분량]\n약 ${S.words.toLocaleString()}어절(띄어쓰기로 나뉜 단위) 내외. 이 분량에 맞춰 장면을 구성해줘.`;
+  user+=`\n\n[분량]\n본문 ${S.words.toLocaleString()}어절 이상(어절 = 띄어쓰기로 나뉜 단어 하나). 이 분량은 하한이니 모자라게 쓰지 마.`;
+  if(S.words>CHUNK) user+=`\n분량이 길어서 여러 번에 나눠 이어 쓰게 될 거야. 이번 응답에서는 쓸 수 있는 만큼 최대한 길게 쓰고, 요약하거나 서둘러 결말로 가지 마. 목표 분량에 아직 한참 못 미쳤다면 결말을 쓰지 말고 장면이 이어지는 곳에서 멈춰도 돼. 장 구분은 "## 1", "## 2"처럼 써줘.`;
   let prev=null;
   if(t.cont){
     prev=S.stories.find(s=>s.id===S.contStory);
@@ -513,37 +525,72 @@ function buildPrompt(){
 }
 
 let gen=null;
+function contPrompt(have,target){
+  const left=Math.max(0,target-have);
+  const finish=left<=CHUNK*1.15;
+  return `지금까지 본문 ${have.toLocaleString()}어절을 썼어. 목표는 ${target.toLocaleString()}어절이야(어절 = 띄어쓰기로 나뉜 단어). `+
+    `방금 쓴 마지막 문장 바로 다음부터 그대로 이어서 써줘. 제목, 요약, 앞 내용 반복, 인사말 없이 본문만.\n`+
+    (finish?`남은 약 ${left.toLocaleString()}어절 안에서 이야기를 마무리하고, 중심 소재를 결말에서 회수해줘.`
+           :`이번에도 최대한 길게 약 ${Math.min(left,CHUNK).toLocaleString()}어절 이상 써주고, 아직 결말은 쓰지 마. 남은 분량은 약 ${left.toLocaleString()}어절이야.`);
+}
+function joinParts(a,b){
+  b=stripChatter(b).replace(/^\s*#{1,3}\s*[^\n]*\n/,"").replace(/^\s*\((이어서|계속)\)\s*/,"");
+  if(!a.trim()) return b;
+  return /[.!?…"”'’」』)\]~\n]\s*$/.test(a)?a.replace(/\s+$/,"")+"\n\n"+b.replace(/^\s+/,""):a+b.replace(/^\s+/,"");
+}
+async function streamOnce(body,ctrl,onText){
+  const r=await apiFetch(`${API}/${S.model}:streamGenerateContent?alt=sse`,{method:"POST",signal:ctrl.signal,headers:{"Content-Type":"application/json"},body:JSON.stringify(body)},S.apiKey);
+  if(!r.ok){ let m=""; try{ m=(await r.json()).error?.message||"" }catch(_){} const e=new Error(apiErr(r.status,m)); e.status=r.status; e.raw=m; throw e }
+  const rd=r.body.getReader(), dec=new TextDecoder(); let buf="", block=null, finish=null, out="";
+  while(true){
+    const {value,done}=await rd.read(); if(done) break;
+    buf+=dec.decode(value,{stream:true});
+    let i; while((i=buf.indexOf("\n"))>=0){
+      const line=buf.slice(0,i).trim(); buf=buf.slice(i+1);
+      if(!line.startsWith("data:")) continue;
+      let j; try{ j=JSON.parse(line.slice(5)) }catch(_){ continue }
+      if(j.promptFeedback?.blockReason) block=j.promptFeedback.blockReason;
+      const c=j.candidates?.[0]; if(c?.finishReason) finish=c.finishReason;
+      for(const part of c?.content?.parts||[]) if(part.text&&!part.thought){ out+=part.text; onText(out) }
+    }
+  }
+  return {out,finish,block};
+}
 async function generate(){
   if(S.mode==='app'){ sendToApp(); return }
   if(!S.apiKey||!S.model){ toast("설정에서 Gemini API 키와 모델을 먼저 연결해주세요",3200); tab="prefs"; render(); setTimeout(geminiEditor,50); return }
   const p=buildPrompt(); if(p.error){ toast(p.error); return }
   if(p.missing.length===curTpl().body.match(/\{\{/g)?.length && !S.scene.trim()){ toast("빈칸을 하나 이상 채워주세요"); return }
-  const ctrl=new AbortController();
-  gen={ctrl,text:"",title:"",workId:p.w?.id||null,tplName:curTpl().name,prev:p.prev};
+  const ctrl=new AbortController(), target=S.words;
+  gen={ctrl,text:"",title:"",workId:p.w?.id||null,tplName:curTpl().name,prev:p.prev,target,round:1};
   openLive();
+  let maxOut=Math.min(S.modelOut||65536,65536);
+  const maxRounds=Math.min(15,Math.ceil(target/CHUNK)+3);
+  const contents=[{role:"user",parts:[{text:p.user}]}];
+  let note=null;
   try{
-    const r=await apiFetch(`${API}/${S.model}:streamGenerateContent?alt=sse`,{method:"POST",signal:ctrl.signal,
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({systemInstruction:{parts:[{text:p.sys}]},contents:[{role:"user",parts:[{text:p.user}]}],
-        generationConfig:{temperature:S.temperature,maxOutputTokens:32768}})},S.apiKey);
-    if(!r.ok){ let m=""; try{ m=(await r.json()).error?.message||"" }catch(_){} throw new Error(apiErr(r.status,m)) }
-    const rd=r.body.getReader(), dec=new TextDecoder(); let buf="", block=null, finish=null;
-    while(true){
-      const {value,done}=await rd.read(); if(done) break;
-      buf+=dec.decode(value,{stream:true});
-      let i; while((i=buf.indexOf("\n"))>=0){
-        const line=buf.slice(0,i).trim(); buf=buf.slice(i+1);
-        if(!line.startsWith("data:")) continue;
-        let j; try{ j=JSON.parse(line.slice(5)) }catch(_){ continue }
-        if(j.promptFeedback?.blockReason) block=j.promptFeedback.blockReason;
-        const c=j.candidates?.[0]; if(c?.finishReason) finish=c.finishReason;
-        for(const part of c?.content?.parts||[]) if(part.text&&!part.thought){ gen.text+=part.text; updateLive() }
+    for(let round=1;round<=maxRounds;round++){
+      gen.round=round; updateLive();
+      const base=gen.text;
+      let res;
+      try{
+        res=await streamOnce({systemInstruction:{parts:[{text:p.sys}]},contents,generationConfig:{temperature:S.temperature,maxOutputTokens:maxOut}},ctrl,out=>{ gen.text=round===1?out:joinParts(base,out); updateLive() });
+      }catch(e){
+        if(e.status===400&&/max.?output.?tokens|maxOutputTokens/i.test(e.raw||"")&&maxOut>8192){ maxOut=8192; round--; continue }
+        throw e;
       }
+      if(!res.out.trim()){
+        if(round===1) throw new Error(res.block?"요청이 Gemini 안전 정책에 걸려 거절됐어요. 표현을 바꿔 다시 시도해주세요.":(res.finish==="SAFETY"||res.finish==="PROHIBITED_CONTENT")?"Gemini가 안전 정책 때문에 쓰기를 멈췄어요. 표현을 바꿔 다시 시도해주세요.":"Gemini가 빈 답을 보냈어요. 다시 시도해주세요.");
+        break;
+      }
+      if(res.finish==="SAFETY"||res.finish==="PROHIBITED_CONTENT"){ note="안전 정책 때문에 중간에 멈췄어요"; break }
+      const have=wordCount(gen.text);
+      if(have>=target*0.95) break;
+      if(round===maxRounds){ note=`목표보다 짧게 끝났어요 (${have.toLocaleString()}어절)`; break }
+      contents.push({role:"model",parts:[{text:res.out}]});
+      contents.push({role:"user",parts:[{text:contPrompt(have,target)}]});
     }
-    if(!gen.text.trim()){
-      throw new Error(block?"요청이 Gemini 안전 정책에 걸려 거절됐어요. 표현을 바꿔 다시 시도해주세요.":finish==="SAFETY"||finish==="PROHIBITED_CONTENT"?"Gemini가 안전 정책 때문에 쓰기를 멈췄어요. 표현을 바꿔 다시 시도해주세요.":"Gemini가 빈 답을 보냈어요. 다시 시도해주세요.");
-    }
-    finishGen(finish==="MAX_TOKENS"?"분량 한도에 닿아 끝부분이 잘렸을 수 있어요":(finish==="SAFETY"?"안전 정책 때문에 중간에 멈췄어요":null));
+    finishGen(note);
   }catch(e){
     if(e.name==="AbortError"){ if(gen.text.trim().length>100) finishGen("중간에 멈췄어요"); else { closeLive(); toast("멈췄어요") } return }
     if(gen.text.trim().length>300){ finishGen("연결이 끊겨 중간까지만 저장했어요") }
@@ -590,11 +637,12 @@ function readerVars(el){
   el.style.setProperty("--rsize",r.size+"px");
   el.style.setProperty("--rlh",r.lh);
   el.style.setProperty("--rp",innerWidth<380?"26px":"32px");
+  if(el.id!=="liveReader") el.classList.toggle("scrollmode",r.flow==="scroll");
 }
 function openLive(){
   closeLive();
   const el=document.createElement("div"); el.className="reader"; el.id="liveReader"; readerVars(el);
-  el.innerHTML=`<div class="writing"><i></i>Gemini가 쓰는 중</div><div class="live" id="liveText"></div><div class="livebar"><button class="cta" id="stopGen">${ic("stop")}멈추기</button></div>`;
+  el.innerHTML=`<div class="writing"><i></i>Gemini가 쓰는 중<span class="wcount"></span></div><div class="live" id="liveText"></div><div class="livebar"><button class="cta" id="stopGen">${ic("stop")}멈추기</button></div>`;
   document.body.appendChild(el);
   el.querySelector("#stopGen").onclick=()=>gen?.ctrl.abort();
 }
@@ -604,6 +652,7 @@ function updateLive(){
     const box=document.getElementById("liveText"); if(!box||!gen) return;
     const {title,body}=splitTitle(gen.text.includes("\n")?gen.text:gen.text+"\n");
     box.innerHTML=(title?`<p class="ttl">${esc(title)}</p>`:"")+bodyHTML(body);
+    const wr=document.querySelector("#liveReader .wcount"); if(wr&&gen.target) wr.textContent=` · ${wordCount(gen.text).toLocaleString()} / ${gen.target.toLocaleString()}어절${gen.round>1?` · ${gen.round}번째 이어 쓰는 중`:""}`;
   });
 }
 function closeLive(){ document.getElementById("liveReader")?.remove() }
@@ -613,29 +662,40 @@ function openReader(id){
   S.lastRead=id; save();
   const el=document.createElement("div"); el.className="reader"; readerVars(el);
   el.innerHTML=`<div class="rtop"><button class="icon" data-r="close" aria-label="닫기" style="color:inherit">${ic("back")}</button><div class="t">${esc(s.title)}</div><button class="icon" data-r="menu" aria-label="보기 설정" style="color:inherit">${ic("aa")}</button></div>
-    <div class="rbox"><div class="rflow"><p class="ttl">${esc(s.title)}</p>${bodyHTML(s.text)}<span class="end"></span></div></div>
+    <div class="rbox"><div class="rflow"><p class="ttl">${esc(s.title)}</p>${bodyHTML(s.text)}<span class="end"></span></div><div class="rend"><div class="k">끝</div><button class="cta" data-r="cont">${ic("spark")}이어 쓰기</button><button class="textbtn" data-r="close">서재로</button></div></div>
     <div class="tapzone"><div data-r="prev" style="width:30%"></div><div data-r="mid" style="width:40%"></div><div data-r="next" style="width:30%"></div></div>
     <div class="rfoot"><span class="pn"></span><div class="prog"><i></i></div></div>`;
   document.body.appendChild(el);
-  R={el,story:s,page:0,pages:1};
+  R={el,story:s,page:0,pages:1,ratio:s.progress||0};
   layoutReader(true);
+  const box=el.querySelector(".rbox"); let sr=0;
+  box.addEventListener("scroll",()=>{ if(S.reader.flow!=="scroll"||sr) return; sr=requestAnimationFrame(()=>{ sr=0; const max=box.scrollHeight-box.clientHeight; R.ratio=max>0?Math.min(1,box.scrollTop/max):1; paintScroll() }) },{passive:true});
+  box.addEventListener("click",e=>{ if(S.reader.flow!=="scroll"||e.target.closest("button")) return; if(String(getSelection())) return; el.classList.toggle("chrome") });
   el.addEventListener("click",e=>{ const b=e.target.closest("[data-r]"); if(!b) return; const a=b.dataset.r;
     if(a==="prev") turn(-1); else if(a==="next") turn(1); else if(a==="mid") el.classList.toggle("chrome");
-    else if(a==="close") closeReader(); else if(a==="menu") readerSheet() });
+    else if(a==="close") closeReader(); else if(a==="menu") readerSheet();
+    else if(a==="cont"){ const id=R.story.id; closeReader(); startCont(id) } });
   let sx=0,sy=0,st=0;
   el.addEventListener("touchstart",e=>{ sx=e.touches[0].clientX; sy=e.touches[0].clientY; st=Date.now() },{passive:true});
-  el.addEventListener("touchend",e=>{ const dx=e.changedTouches[0].clientX-sx, dy=e.changedTouches[0].clientY-sy;
+  el.addEventListener("touchend",e=>{ if(S.reader.flow==="scroll") return; const dx=e.changedTouches[0].clientX-sx, dy=e.changedTouches[0].clientY-sy;
     if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.3&&Date.now()-st<700){ e.preventDefault(); turn(dx<0?1:-1) } });
   document.addEventListener("keydown",keyTurn);
 }
-function keyTurn(e){ if(!R) return; if(e.key==="ArrowRight"||e.key===" ") turn(1); else if(e.key==="ArrowLeft") turn(-1); else if(e.key==="Escape") closeReader() }
+function keyTurn(e){ if(!R) return; if(S.reader.flow==="scroll"){ if(e.key==="Escape") closeReader(); return } if(e.key==="ArrowRight"||e.key===" ") turn(1); else if(e.key==="ArrowLeft") turn(-1); else if(e.key==="Escape") closeReader() }
 function layoutReader(restore){
   if(!R) return; const {el,story}=R; readerVars(el);
   const box=el.querySelector(".rbox"), flow=el.querySelector(".rflow");
+  if(S.reader.flow==="scroll"){
+    flow.style.columnWidth=""; flow.style.columnGap=""; flow.style.width=""; flow.style.transform="";
+    const ratio=restore?(story.progress||0):R.ratio;
+    requestAnimationFrame(()=>{ const max=box.scrollHeight-box.clientHeight; box.scrollTop=ratio*max; R.ratio=ratio; paintScroll() });
+    return;
+  }
+  box.scrollTop=0;
   const w=box.clientWidth, gap=parseFloat(getComputedStyle(el).getPropertyValue("--rp"))*2;
   flow.style.columnWidth=w+"px"; flow.style.columnGap=gap+"px"; flow.style.width=w+"px";
   R.step=w+gap;
-  const ratio=restore?(story.progress||0):(R.pages>1?R.page/(R.pages-1):0);
+  const ratio=restore?(story.progress||0):R.ratio;
   flow.style.transition="none";
   requestAnimationFrame(()=>{
     const end=flow.querySelector(".end");
@@ -650,7 +710,13 @@ function paint(){
   el.querySelector(".pn").textContent=`${page+1} / ${pages}`;
   const prog=pages>1?page/(pages-1):1;
   el.querySelector(".rfoot .prog i").style.width=(prog*100)+"%";
-  R.story.progress=prog; save();
+  R.ratio=prog; R.story.progress=prog; save();
+}
+function paintScroll(){
+  const {el,ratio}=R;
+  el.querySelector(".pn").textContent=`${Math.round(ratio*100)}%`;
+  el.querySelector(".rfoot .prog i").style.width=(ratio*100)+"%";
+  R.story.progress=ratio; save();
 }
 function turn(d){
   if(!R) return; const n=R.page+d;
@@ -666,13 +732,17 @@ function readerSheet(){
   const bgs=[["theme",isDark()?"#121416":"#F7F7F5","기본"],["gray","#E7ECEF","회색"],["dim","#1A2024","어둡게"],["black","#000000","검정"]];
   const s=sheet(`<div class="rsheet">
     <div class="swatches" role="radiogroup" aria-label="배경">${bgs.map(([k,c,l])=>`<button class="sw" data-bg="${k}" aria-label="${l}" aria-checked="${r.bg===k}" style="background:${c}"></button>`).join("")}</div>
-    <div class="seg" role="group" aria-label="글꼴"><button data-font="serif" class="serif" aria-pressed="${r.font==="serif"}">명조</button><button data-font="sans" aria-pressed="${r.font==="sans"}">고딕</button></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap">
+      <div class="seg" role="group" aria-label="글꼴"><button data-font="serif" class="serif" aria-pressed="${r.font==="serif"}">명조</button><button data-font="sans" aria-pressed="${r.font==="sans"}">고딕</button></div>
+      <div class="seg" role="group" aria-label="읽는 방식"><button data-flow="page" aria-pressed="${r.flow!=="scroll"}">넘기기</button><button data-flow="scroll" aria-pressed="${r.flow==="scroll"}">스크롤</button></div>
+    </div>
     <div class="slider"><span class="s">가</span><input type="range" id="rsz" min="14" max="26" step="1" value="${r.size}" aria-label="글자 크기"><span class="l">가</span></div>
     <div class="slider"><span class="s">≡</span><input type="range" id="rlh" min="1.5" max="2.4" step="0.1" value="${r.lh}" aria-label="줄 간격"><span class="l">≡</span></div>
     <div class="acts"><button class="textbtn" data-x="cont">이어 쓰기</button><button class="textbtn" data-x="del" style="color:var(--danger)">삭제</button></div></div>`,
     (e,close)=>{
       const b=e.target.closest("button"); if(!b) return;
       if(b.dataset.bg){ r.bg=b.dataset.bg; s.querySelectorAll(".sw").forEach(x=>x.setAttribute("aria-checked",x===b)); save(); layoutReader(false) }
+      if(b.dataset.flow){ r.flow=b.dataset.flow; s.querySelectorAll("[data-flow]").forEach(x=>x.setAttribute("aria-pressed",x===b)); save(); layoutReader(false) }
       if(b.dataset.font){ r.font=b.dataset.font; s.querySelectorAll("[data-font]").forEach(x=>x.setAttribute("aria-pressed",x===b)); save(); layoutReader(false) }
       if(b.dataset.x==="cont"){ const id=R.story.id; close(); closeReader(); startCont(id) }
       if(b.dataset.x==="del"){ if(b.dataset.armed!=="1"){ b.dataset.armed="1"; b.textContent="한 번 더 누르면 삭제"; return }
@@ -706,7 +776,7 @@ function sendToApp(){
   const p=buildPrompt(); if(p.error){ toast(p.error); return }
   if(p.missing.length===curTpl().body.match(/\{\{/g)?.length && !S.scene.trim()){ toast("빈칸을 하나 이상 채워주세요"); return }
   const prompt=appPromptText(p);
-  S.pending={prompt,workId:p.w?.id||null,tplName:curTpl().name,prevId:p.prev?.id||null,at:Date.now(),draft:""}; save();
+  S.pending={prompt,target:S.words,workId:p.w?.id||null,tplName:curTpl().name,prevId:p.prev?.id||null,at:Date.now(),draft:""}; save();
   copyText(prompt).then(ok=>{ openPending(ok) });
 }
 function openPending(copied){
@@ -726,16 +796,26 @@ function openPending(copied){
      </div>
      <textarea class="pastebox" id="pasteBox" placeholder="Gemini의 답을 여기에 붙여넣기">${esc(pd.draft||"")}</textarea>
      <div class="minirow" style="margin-top:12px"><button class="textbtn" data-p="paste">클립보드에서 붙여넣기</button><span id="pcount" style="margin-left:auto;font-size:13px;color:var(--ink3);font-variant-numeric:tabular-nums"></span></div>
+     <div id="pmore" hidden style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">
+       <div style="font-size:14px;color:var(--ink2);line-height:1.6">아직 목표 분량보다 짧아요. 같은 Gemini 대화에 이어 쓰기 요청을 보내고, 받은 답을 이어 붙이세요.</div>
+       <div class="minirow" style="margin-top:12px"><button class="ghost" data-p="contcopy">${ic("copy")}이어 쓰기 요청 복사</button><button class="ghost" data-p="append">${ic("plus")}이어 붙이기</button></div>
+     </div>
    </div>
    <div class="cta-wrap" style="padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))"><button class="cta" data-p="done" id="pdone">${ic("book")}서재에 넣기</button></div>`;
   document.body.appendChild(el);
   const box=el.querySelector("#pasteBox"), done=el.querySelector("#pdone"), cnt=el.querySelector("#pcount");
-  const upd=()=>{ const n=box.value.trim().length; done.disabled=n<20; cnt.textContent=n?`${n.toLocaleString()}자`:""; pd.draft=box.value; save() };
+  const tgt=pd.target||S.words, more=el.querySelector("#pmore");
+  const upd=()=>{ const n=box.value.trim().length, w=wordCount(cleanPaste(box.value)); done.disabled=n<20; cnt.textContent=n?`${w.toLocaleString()} / ${tgt.toLocaleString()}어절`:""; more.hidden=!(n>=20&&w<tgt*0.95); pd.draft=box.value; save() };
   box.addEventListener("input",upd); upd();
   el.addEventListener("click",async e=>{
     const b=e.target.closest("[data-p]"); if(!b) return; const a=b.dataset.p;
     if(a==="copy"){ toast(await copyText(pd.prompt)?"프롬프트를 복사했어요":"복사하지 못했어요. 다시 눌러주세요",1600) }
     if(a==="paste"){ try{ const t=await navigator.clipboard.readText(); if(t){ box.value=t; upd() } else toast("클립보드가 비어 있어요") }catch(_){ box.focus(); toast("입력칸을 길게 눌러 붙여넣어 주세요",2400) } }
+    if(a==="contcopy"){ const w=wordCount(cleanPaste(box.value)); toast(await copyText(contPrompt(w,tgt))?"이어 쓰기 요청을 복사했어요. 같은 Gemini 대화에 붙여넣어 주세요":"복사하지 못했어요. 다시 눌러주세요",2600) }
+    if(a==="append"){ try{ const t=await navigator.clipboard.readText(); if(!t.trim()){ toast("클립보드가 비어 있어요"); return }
+        if(box.value.includes(t.trim().slice(0,80))){ toast("이미 붙여넣은 내용이에요. Gemini의 새 답을 복사해 와주세요",2600); return }
+        box.value=joinParts(box.value,cleanPaste(t)); upd(); box.scrollTop=box.scrollHeight; toast("이어 붙였어요",1200)
+      }catch(_){ box.focus(); box.setSelectionRange(box.value.length,box.value.length); box.value=box.value.replace(/\s*$/,"\n\n"); toast("입력칸 맨 끝을 길게 눌러 붙여넣어 주세요",2600) } }
     if(a==="cancel"){
       if(b.dataset.armed!=="1"&&box.value.trim()){ b.dataset.armed="1"; toast("붙여넣은 내용이 있어요. 한 번 더 누르면 취소돼요",2000); return }
       S.pending=null; save(); el.remove(); render() }
@@ -751,9 +831,21 @@ function cleanPaste(t){
   t=t.replace(/\r/g,"").trim();
   // Gemini 앱이 붙이는 앞뒤 인사말·코드블록 정리
   t=t.replace(/^```[a-z]*\n?/i,"").replace(/\n?```$/,"");
+  t=stripChatter(t);
   const lines=t.split("\n");
   const hi=lines.findIndex(l=>/^\s*#{1,3}\s*\S/.test(l));
   if(hi>0&&hi<=3&&lines.slice(0,hi).join("").length<200) t=lines.slice(hi).join("\n");
+  return t;
+}
+function stripChatter(t){
+  t=t.replace(/\r/g,"").trim();
+  // 첫 문단이 짧은 응답 인사말이면 제거
+  const firstPara=t.split(/\n\s*\n/)[0];
+  const fp=firstPara.trim();
+  if(fp.length<80&&!/^#/.test(fp)&&!/["“「『]/.test(fp)&&/^(네|넵|좋아요|알겠|물론)|요청하신|이어서|계속해서|이어 ?쓰|써 ?(드릴|볼)|작성해|소설입니다|이야기입니다/.test(fp)&&/(습니다|할게요|드릴게요|볼게요|쓸게요|갑니다|입니다)[.!~]*$/.test(fp)) t=t.slice(firstPara.length).trim();
+  // 끝에 붙는 안내 문구 제거
+  const paras=t.split(/\n\s*\n/); const last=paras[paras.length-1]||"";
+  if(paras.length>1&&last.length<160&&/(원하시면|필요하시면|말씀해 주세요|말씀해주세요|알려주세요|도움이 되|이어서 써 드릴|다음 편)/.test(last)) t=paras.slice(0,-1).join("\n\n");
   return t;
 }
 
@@ -761,7 +853,7 @@ function cleanPaste(t){
 (async()=>{
   const saved=await store.get();
   S={...structuredClone(DEFAULTS),...(saved||{})};
-  S.reader={...DEFAULTS.reader,...S.reader};
+  S.reader={...DEFAULTS.reader,...S.reader}; if(S.reader.flow!=="scroll") S.reader.flow="page";
   for(const w of S.works){
     if(w.memo===undefined){
       const parts=[["등장인물",w.chars],["관계 · 호칭",w.relations],["세계관",w.world]].filter(([,v])=>(v||"").trim());
