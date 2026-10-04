@@ -76,6 +76,23 @@ input,textarea,select{font:inherit;color:inherit;font-size:16px}
 .line-input::placeholder{color:var(--ink3)}
 .line-input:focus{border-bottom-color:var(--accent)}
 select.line-input{appearance:none;-webkit-appearance:none}
+.titlerow{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.titleacts{display:flex;align-items:center;gap:6px}
+.resetbtn{font-size:14px;color:var(--ink3);padding:6px 0 6px 10px}
+.randbtn{display:inline-flex;align-items:center;gap:5px;font-size:14px;color:var(--accent);font-weight:700;padding:6px 6px}
+.randbtn svg{width:16px;height:16px}
+.randbtn:disabled{opacity:.5}
+.randbtn.busy svg{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.resetbtn[data-armed="1"]{color:var(--danger);font-weight:700}
+.genre{display:flex;align-items:center;gap:12px;margin-top:26px;font-size:15px;color:var(--ink3)}
+.genre .sel{position:relative;flex:1;min-width:0}
+.genre select{width:100%;appearance:none;-webkit-appearance:none;border:0;border-bottom:1px solid var(--line);background:transparent;padding:6px 26px 8px 0;font-size:16px;color:var(--ink);font-weight:600;outline:none}
+.genre select:focus{border-bottom-color:var(--accent)}
+.genre select.none{color:var(--ink3);font-weight:500}
+.genre .sel svg{position:absolute;right:2px;top:50%;width:16px;height:16px;transform:translateY(-50%) rotate(90deg);color:var(--ink3);pointer-events:none}
+.genre-custom{margin-top:10px}
+textarea.line-input{resize:none;overflow:hidden;line-height:1.6;min-height:46px;display:block;font-family:inherit}
 .words{display:flex;align-items:baseline;gap:8px;margin-top:26px;font-size:15px;color:var(--ink3)}
 .words input{width:5.5em;border:0;border-bottom:1px solid var(--line);background:transparent;padding:4px 0 6px;text-align:right;font-weight:700;color:var(--ink);outline:none;font-variant-numeric:tabular-nums}
 .words input:focus{border-bottom-color:var(--accent)}
@@ -218,7 +235,7 @@ const DEFAULTS={
     {id:"t_daily",name:"일상",body:"{{등장인물}}의 {{일상 상황}}을 그린 짧은 이야기. 분위기는 {{분위기}}."},
     {id:"t_cont",name:"이어 쓰기",body:"앞 이야기에 바로 이어서, {{다음 전개}}.",cont:true}
   ],
-  works:[], activeWork:null, activeTemplate:"t_short", words:1500, drafts:{}, scene:"", contStory:null,
+  works:[], activeWork:null, activeTemplate:"t_short", words:1500, drafts:{}, scene:"", genre:"", genreCustom:"", contStory:null,
   stories:[], lastRead:null,
   reader:{bg:"theme",font:"serif",size:18,lh:1.9,flow:"page"}
 };
@@ -238,6 +255,7 @@ const P={
   sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
   aa:'<path d="M3 19l5-13 5 13M5 14h6M15 19l3.5-9 3.5 9M16 16h5"/>', more:'<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>',
   copy:'<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 00-1-1H5a1 1 0 00-1 1v10a1 1 0 001 1h3"/>',ext:'<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h5"/>',
+  dice:'<rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r=".9" fill="currentColor"/><circle cx="15" cy="15" r=".9" fill="currentColor"/><circle cx="15" cy="9" r=".9" fill="currentColor"/><circle cx="9" cy="15" r=".9" fill="currentColor"/>',
   stop:'<rect x="7" y="7" width="10" height="10" rx="1.5"/>'
 };
 const ic=(n,w)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"${w?` style="width:${w}px;height:${w}px"`:""}>${P[n]}</svg>`;
@@ -298,6 +316,23 @@ function vLibrary(){
 const WMIN=50, WMAX=30000;
 const CHUNK=3500; // 한 번의 응답에 기대하는 어절 수
 function wordCount(t){ const b=splitTitle(t||"").body.trim(); return b?b.split(/\s+/).length:0 }
+const GENRES=[
+  ["후회남주","무심함·오해로 상처를 준 인물이 뒤늦게 깨닫고 만회한다. 사과해 본 적 없는 인물이 처음 사과하는 순간이 전환점."],
+  ["피폐·이별 위기","권태·오해·자존심이 곪아 관계가 무너지기 직전까지 갔다가 밑바닥에서 되돌아온다. 무겁고 진지하게."],
+  ["달달·슈가러시","갈등은 거의 없거나 가볍게, 애정 표현과 다정한 순간에 집중한다. 읽는 내내 설렘."],
+  ["코미디·시트콤","작은 사건 하나가 하루 안에 사방으로 굴러가는 좌충우돌. 끝에 감정으로 착지하고 무대를 빠르게 바꾼다."],
+  ["질투·오해","제3자의 등장으로 한쪽이 속을 태운다. 실제 위협은 없어도 질투하는 마음고생이 이야기를 끈다."],
+  ["잔잔·힐링","큰 사건 없이 계절과 생활의 결을 따라가며, 소품과 반복되는 일상으로 관계의 깊이를 드러낸다."],
+  ["판타지 한 스푼","회귀·몸 바뀜·미래 보기처럼 설정 하나만 비틀고, 그 가정 위에서 관계를 다시 비춘다."],
+  ["가족 드라마","주변 가족과 인물이 크게 개입해 웃음과 온기를 만드는 앙상블. 집 전체가 주인공."],
+  ["성장·커리어","일에서의 좌절과 성취가 관계와 얽혀 두 사람을 성장시킨다."],
+  ["재회·시간 점프","몇 년 뒤로 건너뛰어 세월이 쌓인 관계의 무게나 오래 못 본 인물과의 재회를 그린다."]
+];
+function genreText(){
+  if(S.genre==="custom") return (S.genreCustom||"").trim();
+  const g=GENRES.find(x=>x[0]===S.genre); return g?`${g[0]} — ${g[1]}`:"";
+}
+function growTA(el){ el.style.height="auto"; el.style.height=el.scrollHeight+"px" }
 function curTpl(){ return S.templates.find(t=>t.id===S.activeTemplate)||S.templates[0] }
 function tplHTML(t){
   const d=S.drafts[t.id]||{};
@@ -308,11 +343,15 @@ function vWrite(){
   const contOpts=S.stories.map(s=>`<option value="${s.id}" ${S.contStory===s.id?"selected":""}>${esc(s.title)}</option>`).join("");
   return `<div class="head">${backBtn()}<button class="workpick" data-act="pickwork"><span>${esc(S.activeWork?workName(S.activeWork):"설정 없음")}</span>${ic("chev")}</button></div>
   <div class="scroll">
-    <div class="title">새 이야기</div>
+    <div class="titlerow"><div class="title">새 이야기</div><div class="titleacts"><button class="randbtn" data-act="randomfill" aria-label="인물·장르·분량 빼고 랜덤으로 채우기">${ic("dice")}랜덤</button><button class="resetbtn" data-act="resetwrite">초기화</button></div></div>
     <div class="texttabs" style="margin-top:24px">${S.templates.map(x=>`<button data-act="tpl" data-id="${x.id}" aria-pressed="${x.id===t.id}">${esc(x.name)}</button>`).join("")}</div>
     ${t.cont?`<select class="line-input" id="contStory" aria-label="이어 쓸 이야기">${contOpts?`<option value="">이어 쓸 이야기 고르기</option>${contOpts}`:`<option value="">서재에 이야기가 없어요</option>`}</select>`:""}
     <div class="tpl" id="tpl">${tplHTML(t)}</div>
-    <input class="line-input" id="scene" placeholder="넣고 싶은 장면" value="${esc(S.scene)}" autocomplete="off">
+    <div class="genre"><span>장르</span><div class="sel"><select id="genre" class="${S.genre?"":"none"}" aria-label="장르">
+      <option value="">선택 안 함</option>${GENRES.map(([g])=>`<option value="${g}" ${S.genre===g?"selected":""}>${g}</option>`).join("")}<option value="custom" ${S.genre==="custom"?"selected":""}>직접 작성</option>
+    </select>${ic("chev")}</div></div>
+    ${S.genre==="custom"?`<input class="line-input genre-custom" id="genreCustom" placeholder="예: 질투 + 후회남주, 오피스 로맨스" value="${esc(S.genreCustom)}" autocomplete="off">`:""}
+    <textarea class="line-input" id="scene" rows="1" placeholder="넣고 싶은 장면">${esc(S.scene)}</textarea>
     <label class="words"><span>분량</span><input id="words" type="text" inputmode="numeric" pattern="[0-9]*" value="${S.words}" aria-label="분량(어절)" autocomplete="off"><span>어절</span></label>
   </div>
   <div class="cta-wrap"><button class="cta" data-act="generate">${ic("spark")}${S.mode==="app"?"Gemini 앱으로 보내기":"Gemini로 쓰기"}</button></div>`;
@@ -324,7 +363,10 @@ function bindWrite(){
     el.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); const all=[...app.querySelectorAll(".blank")];const n=all[all.indexOf(el)+1];n?n.focus():app.querySelector("#scene").focus() } });
     el.addEventListener("paste",e=>{ e.preventDefault(); document.execCommand("insertText",false,(e.clipboardData.getData("text")||"").replace(/\s+/g," ")) });
   });
-  app.querySelector("#scene").addEventListener("input",e=>{ S.scene=e.target.value; save() });
+  const sc=app.querySelector("#scene"); growTA(sc);
+  sc.addEventListener("input",()=>{ S.scene=sc.value; growTA(sc); save() });
+  app.querySelector("#genre").addEventListener("change",e=>{ S.genre=e.target.value; save(); const y=app.querySelector(".scroll").scrollTop; render(); app.querySelector(".scroll").scrollTop=y; if(S.genre==="custom") app.querySelector("#genreCustom")?.focus() });
+  app.querySelector("#genreCustom")?.addEventListener("input",e=>{ S.genreCustom=e.target.value; save() });
   const wi=app.querySelector("#words");
   wi.addEventListener("input",()=>{ wi.value=wi.value.replace(/[^0-9]/g,"").slice(0,5); const n=+wi.value; if(n>=WMIN&&n<=WMAX){ S.words=n; save() } });
   wi.addEventListener("blur",()=>{ let n=+wi.value||S.words; n=Math.min(WMAX,Math.max(WMIN,n)); if(+wi.value&&+wi.value!==n) toast(`분량은 ${WMIN}~${WMAX.toLocaleString()}어절 사이로 정할 수 있어요`); S.words=n; wi.value=n; save() });
@@ -402,6 +444,10 @@ const ACT={
   libf(d){ libFilter=d.k; render() },
   open(d){ openReader(d.id) },
   tpl(d){ S.activeTemplate=d.id; save(); render() },
+  randomfill(d,b){ randomFill(b) },
+  resetwrite(d,b){
+    if(b.dataset.armed!=="1"){ b.dataset.armed="1"; b.textContent="한 번 더 누르면 비워져요"; clearTimeout(b._t); b._t=setTimeout(()=>{ if(b.isConnected){ b.dataset.armed=""; b.textContent="초기화" } },2500); return }
+    S.drafts[curTpl().id]={}; S.scene=""; S.genre=""; S.genreCustom=""; save(); render(); toast("입력한 내용을 비웠어요",1400) },
   pickwork(){
     const opts=[[null,"설정 없음"],...S.works.map(w=>[w.id,w.name])];
     sheet(opts.map(([id,n])=>`<button class="opt" data-id="${id??""}" aria-checked="${(S.activeWork||"")===(id||"")}">${esc(n)}${(S.activeWork||"")===(id||"")?ic("chev",0).replace(P.chev,'<path d="M5 12l5 5L20 7"/>'):""}</button>`).join("")+`<button class="opt" data-new="1" style="color:var(--ink3)">작품 추가</button>`,
@@ -511,6 +557,7 @@ function buildPrompt(){
     if((w.memo||"").trim()) sys+=`\n${w.memo.trim()}`;
   }
   let user=`[요청]\n${filled}`;
+  const gtx=genreText(); if(gtx) user+=`\n\n[장르]\n${gtx}`;
   if(S.scene.trim()) user+=`\n\n[꼭 넣을 장면]\n${S.scene.trim()}`;
   user+=`\n\n[분량]\n본문 ${S.words.toLocaleString()}어절 이상(어절 = 띄어쓰기로 나뉜 단어 하나). 이 분량은 하한이니 모자라게 쓰지 마.`;
   if(S.words>CHUNK) user+=`\n분량이 길어서 여러 번에 나눠 이어 쓰게 될 거야. 이번 응답에서는 쓸 수 있는 만큼 최대한 길게 쓰고, 요약하거나 서둘러 결말로 가지 마. 목표 분량에 아직 한참 못 미쳤다면 결말을 쓰지 말고 장면이 이어지는 곳에서 멈춰도 돼. 장 구분은 "## 1", "## 2"처럼 써줘.`;
@@ -560,7 +607,7 @@ async function generate(){
   if(S.mode==='app'){ sendToApp(); return }
   if(!S.apiKey||!S.model){ toast("설정에서 Gemini API 키와 모델을 먼저 연결해주세요",3200); tab="prefs"; render(); setTimeout(geminiEditor,50); return }
   const p=buildPrompt(); if(p.error){ toast(p.error); return }
-  if(p.missing.length===curTpl().body.match(/\{\{/g)?.length && !S.scene.trim()){ toast("빈칸을 하나 이상 채워주세요"); return }
+  if(p.missing.length===curTpl().body.match(/\{\{/g)?.length && !S.scene.trim() && !genreText()){ toast("빈칸을 하나 이상 채워주세요"); return }
   const ctrl=new AbortController(), target=S.words;
   gen={ctrl,text:"",title:"",workId:p.w?.id||null,tplName:curTpl().name,prev:p.prev,target,round:1};
   openLive();
@@ -763,6 +810,47 @@ function startCont(id){
   S.activeTemplate=t.id; S.contStory=id; const st=S.stories.find(x=>x.id===id); if(st?.workId) S.activeWork=st.workId; save(); tab="write"; render();
 }
 
+/* ───────── 랜덤 채우기 (API) ───────── */
+const CHAR_KEY=/(인물|등장인물|주연|커플|캐릭터)/;
+let randBusy=false;
+async function randomFill(b){
+  if(randBusy) return;
+  if(!S.apiKey||!S.model){ toast("랜덤 채우기는 Gemini API를 써요. 설정 › API 연결에서 키와 모델을 넣어주세요",3400); return }
+  const t=curTpl(), d=(S.drafts[t.id] ||= {});
+  const keys=[...new Set([...t.body.matchAll(/\{\{(.+?)\}\}/g)].map(m=>m[1]))];
+  const fill=keys.filter(k=>!CHAR_KEY.test(k)), chars=keys.filter(k=>CHAR_KEY.test(k));
+  const w=S.works.find(x=>x.id===S.activeWork);
+  const prev=t.cont?S.stories.find(x=>x.id===S.contStory):null;
+  if(t.cont&&!prev){ toast("이어 쓸 이야기를 먼저 골라주세요"); return }
+  const ids=fill.map((k,i)=>"f"+i);
+  let ctx=`2차 창작 소설의 기획안을 랜덤으로 채워줘. 뻔하지 않고 구체적인 아이디어로, 매번 다르게.\n\n[템플릿]\n${t.body}\n\n`;
+  ctx+=`[채울 칸]\n${fill.map((k,i)=>`${ids[i]}: {{${k}}}`).join("\n")}\nscene: 이야기에 꼭 넣을 장면 하나 (한두 문장)\n\n`;
+  ctx+=`각 칸은 템플릿 문장 안에 그대로 들어가므로 앞뒤 조사·어미와 자연스럽게 이어지는 짧은 구로 써줘. 마침표나 따옴표는 넣지 마.\n`;
+  if(chars.length) ctx+=`\n[이미 정해진 인물] ${chars.map(k=>`${k}=${(d[k]||"").trim()||"(미정)"}`).join(", ")} — 이 인물은 바꾸지 말고 그대로 활용해.`;
+  const g=genreText(); if(g) ctx+=`\n[장르] ${g} — 이 장르에 어울리게.`;
+  if(w&&(w.memo||"").trim()) ctx+=`\n\n[작품 설정: ${w.name}]\n${w.memo.trim().slice(0,6000)}`;
+  if(prev) ctx+=`\n\n[앞 이야기 끝부분: ${prev.title}]\n${prev.text.slice(-3000)}`;
+  const past=S.stories.filter(x=>(x.workId||null)===(w?.id||null)).slice(0,15).map(x=>x.title);
+  if(past.length) ctx+=`\n\n[이미 쓴 이야기 — 소재가 겹치지 않게]\n${past.join(", ")}`;
+  const props={}; ids.forEach((id,i)=>props[id]={type:"STRING",description:fill[i]}); props.scene={type:"STRING",description:"꼭 넣을 장면"};
+  randBusy=true; b.disabled=true; b.classList.add("busy");
+  try{
+    const r=await apiFetch(`${API}/${S.model}:generateContent`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
+      contents:[{role:"user",parts:[{text:ctx}]}],
+      generationConfig:{temperature:Math.max(1.1,S.temperature),responseMimeType:"application/json",responseSchema:{type:"OBJECT",properties:props,required:[...ids,"scene"]}}})},S.apiKey);
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(apiErr(r.status,j.error?.message||""));
+    const txt=(j.candidates?.[0]?.content?.parts||[]).filter(p=>!p.thought).map(p=>p.text||"").join("");
+    let o; try{ o=JSON.parse(txt.replace(/^```(json)?|```$/g,"").trim()) }catch(_){ throw new Error("랜덤 결과를 읽지 못했어요. 다시 눌러주세요.") }
+    const clean=v=>String(v||"").replace(/\s+/g," ").replace(/^[\s"“'‘]+|[\s"”'’.。]+$/g,"").trim();
+    fill.forEach((k,i)=>{ const v=clean(o[ids[i]]); if(v) d[k]=v });
+    if(clean(o.scene)) S.scene=String(o.scene).trim();
+    save(); const y=app.querySelector(".scroll")?.scrollTop||0; render(); const sc=app.querySelector(".scroll"); if(sc) sc.scrollTop=y;
+    toast("랜덤으로 채웠어요",1400);
+  }catch(e){ toast(e.message==="Failed to fetch"?"인터넷 연결을 확인해주세요":e.message,3600) }
+  finally{ randBusy=false; if(b.isConnected){ b.disabled=false; b.classList.remove("busy") } }
+}
+
 /* ───────── 붙여넣기 모드 ───────── */
 function appPromptText(p){
   return `${p.sys}\n\n${p.user}\n\n(위 지시에 따라 소설 본문만 출력해줘. 첫 줄은 '# 제목'으로 시작해줘.)`;
@@ -774,7 +862,7 @@ async function copyText(t){
 }
 function sendToApp(){
   const p=buildPrompt(); if(p.error){ toast(p.error); return }
-  if(p.missing.length===curTpl().body.match(/\{\{/g)?.length && !S.scene.trim()){ toast("빈칸을 하나 이상 채워주세요"); return }
+  if(p.missing.length===curTpl().body.match(/\{\{/g)?.length && !S.scene.trim() && !genreText()){ toast("빈칸을 하나 이상 채워주세요"); return }
   const prompt=appPromptText(p);
   S.pending={prompt,target:S.words,workId:p.w?.id||null,tplName:curTpl().name,prevId:p.prev?.id||null,at:Date.now(),draft:""}; save();
   copyText(prompt).then(ok=>{ openPending(ok) });
