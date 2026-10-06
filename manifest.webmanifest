@@ -1,6 +1,6 @@
 {
-  "name": "이야기 공방",
-  "short_name": "이야기 공방",
+  "name": "이야기",
+  "short_name": "이야기",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
