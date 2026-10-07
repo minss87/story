@@ -461,7 +461,6 @@ function vWrite(){
     <div class="lbl">꼭 넣을 장면</div>
     <textarea class="line-input" id="scene" rows="1" style="margin-top:2px">${esc(S.scene)}</textarea>
     <label class="words"><span>분량</span><input id="words" type="text" inputmode="numeric" pattern="[0-9]*" value="${S.words}" aria-label="분량(어절)" autocomplete="off"><span>어절</span></label>
-    ${S.plotSteps.length>=2?`<div class="splitrow"><span>단계별로 나눠 쓰기</span><button class="tog" role="switch" aria-checked="${isSplit()}" data-act="togsplit" aria-label="단계별로 나눠 쓰기"></button></div>`:""}
   </div>
   <div class="cta-wrap"><button class="cta" data-act="generate">${ic("spark")}${S.mode==="app"?"Gemini 앱으로 보내기":"Gemini로 쓰기"}</button></div>`;
 }
@@ -487,7 +486,7 @@ function bindWrite(){
     k.addEventListener("input",()=>{ S.plotSteps[i].k=k.value; save() });
     d.addEventListener("input",()=>{ S.plotSteps[i].d=d.value; growTA(d); save() }); });
 }
-function isSplit(){ return S.plotSteps.length>=2&&(S.splitWrite===null?S.words>=6000:!!S.splitWrite) }
+
 function keepScroll(fn){ const y=app.querySelector(".scroll")?.scrollTop||0; fn(); const sc=app.querySelector(".scroll"); if(sc) sc.scrollTop=y }
 
 /* ───────── 설정집 ───────── */
@@ -563,7 +562,6 @@ const ACT={
   expandplot(d,b){ expandPlot(b) },
   addstep(){ S.plotSteps.push({k:"",d:""}); save(); keepScroll(render); const ins=app.querySelectorAll(".pst .sk"); ins[ins.length-1]?.focus() },
   delstep(d){ S.plotSteps.splice(+d.i,1); save(); keepScroll(render) },
-  togsplit(){ S.splitWrite=!isSplit(); save(); keepScroll(render) },
   randomfill(d,b){
     const sh=sheet(`<div style="font-weight:700;font-size:17px;margin-bottom:6px">랜덤으로 채우기</div>
       <p class="hint" style="margin:0 0 4px">장르와 분량은 그대로 두고 나머지를 Gemini가 채워요.</p>
@@ -713,12 +711,13 @@ function buildPrompt(){
     if(past.length) user+=`\n\n[이전 작품 — 소재·구조가 겹치지 않게]\n${past.join("\n")}`;
   }
   const gtx=genreText(); if(gtx) user+=`\n\n[장르]\n${gtx}`;
-  const steps=S.plotSteps.filter(x=>(x.k||x.d).trim()), split=steps.length>=2&&isSplit(), per=Math.max(100,Math.round(S.words/Math.max(1,steps.length)/100)*100);
+  const steps=S.plotSteps.filter(x=>(x.k||x.d).trim()), per=Math.max(100,Math.round(S.words/Math.max(1,steps.length)/100)*100);
+  const chunks=steps.length?planChunks(steps,S.words):null, split=!!(chunks&&chunks.length>1);
   if(steps.length) user+=`\n\n[전개] 아래 순서와 사건을 반드시 지키고, 사이 장면과 감정선은 자유롭게 채워. 각 단계는 "## 번호" 소제목으로 시작해.\n`+steps.map((x,i)=>`${i+1}. ${x.k||"단계 "+(i+1)}: ${x.d} (약 ${per.toLocaleString()}어절)`).join("\n");
   else if(S.plotMemo.trim()) user+=`\n\n[전개 메모]\n${S.plotMemo.trim()}\n이 메모의 흐름을 순서대로 지키되, 각 항목을 구체적인 사건과 감정선으로 풀어서 써. 장 구분은 "## 1", "## 2"처럼 해줘.`;
   if(S.scene.trim()) user+=`\n\n[꼭 넣을 장면]\n${S.scene.trim()}`;
   user+=`\n\n[분량]\n본문 ${S.words.toLocaleString()}어절 이상(어절 = 띄어쓰기로 나뉜 단어 하나). 이 분량은 하한이니 모자라게 쓰지 마.`;
-  if(split) user+=`\n\n분량이 길어서 단계별로 나눠 쓸 거야. 이번 응답에서는 1단계("${steps[0].k}")만 약 ${per.toLocaleString()}어절로 써줘. "## 1"로 시작하고, 2단계 내용은 아직 쓰지 마.`;
+  if(split) user+=`\n\n분량이 길어서 약 ${CHUNK.toLocaleString()}어절씩 ${chunks.length}번에 나눠 이어 쓸 거야. 한 번에 쓸 수 있는 만큼 충분히 길게 쓰되 요약하지 마.\n`+chunkText(chunks[0],steps,0,chunks.length);
   else if(S.words>CHUNK) user+=`\n분량이 길어서 여러 번에 나눠 이어 쓰게 될 거야. 이번 응답에서는 쓸 수 있는 만큼 최대한 길게 쓰고, 요약하거나 서둘러 결말로 가지 마. 목표 분량에 아직 한참 못 미쳤다면 결말을 쓰지 말고 장면이 이어지는 곳에서 멈춰도 돼. 장 구분은 "## 1", "## 2"처럼 써줘.`;
   let prev=null;
   if(t.cont){
@@ -728,7 +727,7 @@ function buildPrompt(){
     user=`[앞 이야기: ${prev.title}]\n${body}\n\n`+user+"\n\n제목은 앞 이야기와 이어지는 회차 제목으로 지어줘.";
   }
   const setup=sys+SETUP_TAIL, request=user+REQUEST_TAIL;
-  return {sys,user,setup,request,h:hashStr(setup),missing,prev,w,steps,split,per};
+  return {sys,user,setup,request,h:hashStr(setup),missing,prev,w,steps,split,per,chunks};
 }
 const SYS_SHORT="너는 한국어 소설가야. 사용자가 먼저 설정과 지침을 보내고, 다음 메시지로 집필을 요청한다. 설정과 지침은 끝까지 지킨다.";
 const SETUP_TAIL="\n\n---\n위 내용은 앞으로 쓸 소설의 설정과 지침이야. 아직 소설은 쓰지 마.\n숙지했다면 주연, 호칭·말투, 꼭 지킬 것을 3줄 이내로 요약하고, 마지막 줄에 '준비됐어요.'라고만 답해줘. 다음 메시지로 집필 요청을 보낼게.";
@@ -799,7 +798,7 @@ async function generate(){
     gen.phase="write"; updateLive();
     // 2단계: 집필 요청
     const contents=[{role:"user",parts:[{text:p.setup}]},{role:"model",parts:[{text:ack}]},{role:"user",parts:[{text:p.request}]}];
-    const rounds=p.split?p.steps.length:maxRounds; gen.steps=p.split?p.steps.length:0;
+    const rounds=p.split?p.chunks.length:maxRounds; gen.steps=p.split?p.chunks.length:0;
     for(let round=1;round<=rounds;round++){
       gen.round=round; updateLive();
       const base=gen.text;
@@ -816,7 +815,7 @@ async function generate(){
       }
       if(res.finish==="SAFETY"||res.finish==="PROHIBITED_CONTENT"){ note="안전 정책 때문에 중간에 멈췄어요"; break }
       const have=wordCount(gen.text);
-      if(p.split){ if(round===rounds) break; contents.push({role:"model",parts:[{text:res.out}]}); contents.push({role:"user",parts:[{text:stepPrompt(round,p.steps,p.per)}]}); continue }
+      if(p.split){ if(round===rounds) break; contents.push({role:"model",parts:[{text:res.out}]}); contents.push({role:"user",parts:[{text:chunkPrompt(round,p.chunks,p.steps,have,target)}]}); continue }
       if(have>=target*0.95) break;
       if(round===maxRounds){ note=`목표보다 짧게 끝났어요 (${have.toLocaleString()}어절)`; break }
       contents.push({role:"model",parts:[{text:res.out}]});
@@ -885,7 +884,7 @@ function updateLive(){
     const {title,body}=splitTitle(gen.text.includes("\n")?gen.text:gen.text+"\n");
     box.innerHTML=(title?`<p class="ttl">${esc(title)}</p>`:"")+bodyHTML(body);
     const wl=document.querySelector("#liveReader .wlabel"); if(wl) wl.textContent=gen.phase==="plan"?"Gemini가 전개를 짜는 중":gen.phase==="prime"?"Gemini가 설정을 읽는 중":"Gemini가 쓰는 중";
-    const wr=document.querySelector("#liveReader .wcount"); if(wr&&(gen.phase==="prime"||gen.phase==="plan")){ wr.textContent=""; return } if(wr&&gen.target) wr.textContent=` · ${wordCount(gen.text).toLocaleString()} / ${gen.target.toLocaleString()}어절${gen.steps?` · ${Math.min(gen.round,gen.steps)}/${gen.steps}단계`:(gen.round>1?` · ${gen.round}번째 이어 쓰는 중`:"")}`;
+    const wr=document.querySelector("#liveReader .wcount"); if(wr&&(gen.phase==="prime"||gen.phase==="plan")){ wr.textContent=""; return } if(wr&&gen.target) wr.textContent=` · ${wordCount(gen.text).toLocaleString()} / ${gen.target.toLocaleString()}어절${gen.steps?` · ${Math.min(gen.round,gen.steps)}/${gen.steps}회차`:(gen.round>1?` · ${gen.round}번째 이어 쓰는 중`:"")}`;
   });
 }
 function closeLive(){ document.getElementById("liveReader")?.remove() }
@@ -1096,6 +1095,33 @@ async function expandPlot(b){
   catch(e){ toast(e.message==="Failed to fetch"?"인터넷 연결을 확인해주세요":e.message,3600); if(b&&b.isConnected){ b.disabled=false; b.innerHTML=b.dataset.label } }
   finally{ plotBusy=false }
 }
+// 전개 단계를 약 CHUNK 어절 회차로 나눔 (단계 경계에 가까우면 경계에 맞춤)
+function planChunks(steps,total){
+  const n=steps.length; if(!n||total<=CHUNK*1.3) return [{s:0,e:Math.max(0,n-1),w:total,sp:false,ep:false}];
+  const per=total/n, k=Math.max(1,Math.round(total/CHUNK)), cuts=[0];
+  for(let j=1;j<k;j++){ const pos=j*total/k, b=Math.round(pos/per)*per; cuts.push(Math.abs(pos-b)<=Math.min(per*0.25,500)&&b>cuts[cuts.length-1]&&b<total?b:pos) }
+  cuts.push(total);
+  const out=[], E=1e-6, on=x=>Math.abs(x/per-Math.round(x/per))<E;
+  for(let j=0;j<cuts.length-1;j++){ const a=cuts[j], b=cuts[j+1]; if(b-a<1) continue;
+    out.push({s:Math.floor(a/per+E),e:Math.min(n-1,Math.ceil(b/per-E)-1),w:Math.round(b-a),sp:!on(a),ep:!on(b)}) }
+  return out;
+}
+function rnd(n){ return Math.max(100,Math.round(n/100)*100).toLocaleString() }
+function chunkText(c,steps,idx,total){
+  const last=idx===total-1, nm=i=>`${i+1}단계(${steps[i].k||"단계 "+(i+1)})`;
+  let range;
+  if(c.s===c.e) range=`전개 ${nm(c.s)}${c.sp&&c.ep?"의 중간 부분":c.sp?"의 남은 부분":c.ep?"의 앞부분":""}`;
+  else range=`전개 ${nm(c.s)}${c.sp?"의 남은 부분":""}부터 ${nm(c.e)}${c.ep?"의 중반":""}까지`;
+  const lc=range.replace(/\)$/,"").slice(-1).charCodeAt(0), obj=lc>=0xAC00&&lc<=0xD7A3&&(lc-0xAC00)%28?"을":"를";
+  let t=`이번 응답(${idx+1}/${total}번째)에서는 ${range}${obj} 약 ${rnd(c.w)}어절로 써줘. 각 단계 분량은 위 [전개]의 어절 수를 따라줘.`;
+  if(last) t+=" 여기서 이야기를 마무리하고 중심 소재를 결말에서 회수해줘.";
+  else if(c.ep) t+=` ${nm(c.e)}의 나머지는 다음 응답에서 이어 쓸 테니, 장면이 이어지는 곳에서 자연스럽게 멈춰.`;
+  else t+=` ${nm(c.e+1)}은(는) 아직 쓰지 말고, 장면이 이어지는 곳에서 자연스럽게 멈춰.`;
+  return t;
+}
+function chunkPrompt(idx,chunks,steps,have,target){
+  return `지금까지 본문 ${have.toLocaleString()}어절을 썼어(목표 ${target.toLocaleString()}어절). 방금 쓴 마지막 문장 바로 다음부터 그대로 이어서 써줘. 제목, 요약, 앞 내용 반복, 인사말 없이 본문만.\n`+chunkText(chunks[idx],steps,idx,chunks.length);
+}
 function stepPrompt(i,steps,per){
   const st=steps[i], last=i===steps.length-1;
   return `이어서 ${i+1}단계를 써줘. 방금 쓴 마지막 문장 바로 다음부터, "## ${i+1}" 소제목으로 시작해. 제목, 요약, 앞 내용 반복, 인사말 없이 본문만.\n${i+1}. ${st.k}: ${st.d} (약 ${per.toLocaleString()}어절)\n`+
@@ -1113,7 +1139,7 @@ function sendToApp(){
   const p=buildPrompt(); if(p.error){ toast(p.error); return }
   if(p.missing.length===curTpl().body.match(/\{\{/g)?.length && !S.scene.trim() && !genreText() && !S.plotMemo.trim()){ toast("빈칸을 하나 이상 채워주세요"); return }
   const primed=S.lastPrimedH===p.h;
-  S.pending={setup:p.setup,request:p.request,h:p.h,meta:storyMeta(),steps:p.steps,split:p.split,per:p.per,step:primed?2:1,primed,target:S.words,workId:p.w?.id||null,tplName:curTpl().name,prevId:p.prev?.id||null,at:Date.now(),draft:""}; save();
+  S.pending={setup:p.setup,request:p.request,h:p.h,meta:storyMeta(),steps:p.steps,split:p.split,per:p.per,chunks:p.chunks,ci:0,lastW:0,step:primed?2:1,primed,target:S.words,workId:p.w?.id||null,tplName:curTpl().name,prevId:p.prev?.id||null,at:Date.now(),draft:""}; save();
   const first=primed?p.request:p.setup;
   copyText(first).then(ok=>{ if(ok){ if(primed) S.pending.step=3; else { S.pending.step=2; S.lastPrimedH=p.h } S.pending.copied=primed?"request":"setup"; S.pending.setupCopied=!primed; save() } openPending() });
 }
@@ -1147,10 +1173,12 @@ function openPending(){
      <div class="cta-wrap" style="padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))"><button class="cta" data-p="done" id="pdone">${ic("book")}서재에 넣기</button></div>`;
     const box=el.querySelector("#pasteBox"), done=el.querySelector("#pdone"), cnt=el.querySelector("#pcount");
     const tgt=pd.target||S.words, more=el.querySelector("#pmore");
-    const upd=()=>{ const n=box.value.trim().length, w=wordCount(cleanPaste(box.value)); done.disabled=n<20; cnt.textContent=n?`${w.toLocaleString()} / ${tgt.toLocaleString()}어절`:""; const steps=pd.steps||[], dn=stepsDone(box.value), splitLeft=pd.split&&steps.length&&dn<steps.length;
+    const upd=()=>{ const n=box.value.trim().length, w=wordCount(cleanPaste(box.value)); done.disabled=n<20; cnt.textContent=n?`${w.toLocaleString()} / ${tgt.toLocaleString()}어절`:""; const ch=pd.split?pd.chunks||[]:[];
+      if(!n){ pd.ci=0; pd.lastW=0 } else if(!pd.ci){ pd.ci=1; pd.lastW=w } else if(ch.length&&pd.ci<ch.length&&w-pd.lastW>=ch[pd.ci].w*0.5){ pd.ci++; pd.lastW=w }
+      const splitLeft=ch.length&&pd.ci<ch.length;
       more.hidden=!(n>=20&&(splitLeft||w<tgt*0.95));
-      el.querySelector("#pmoreTxt").textContent=splitLeft?`${dn}/${steps.length}단계까지 붙여넣었어요. 같은 Gemini 대화에 다음 단계 요청을 보내고, 받은 답을 이어 붙이세요.`:"아직 목표 분량보다 짧아요. 같은 Gemini 대화에 이어 쓰기 요청을 보내고, 받은 답을 이어 붙이세요.";
-      el.querySelector("#contLbl").textContent=splitLeft?`${dn+1}단계 요청 복사`:"이어 쓰기 요청 복사";
+      el.querySelector("#pmoreTxt").textContent=splitLeft?`${pd.ci}/${ch.length}회차까지 붙여넣었어요. 같은 Gemini 대화에 다음 요청을 보내고, 받은 답을 이어 붙이세요.`:"아직 목표 분량보다 짧아요. 같은 Gemini 대화에 이어 쓰기 요청을 보내고, 받은 답을 이어 붙이세요.";
+      el.querySelector("#contLbl").textContent=splitLeft?`${pd.ci+1}회차 요청 복사`:"이어 쓰기 요청 복사";
       pd.draft=box.value; if(n&&pd.step<3) pd.step=3, box.style.opacity=""; save() };
     box.addEventListener("input",upd); upd();
     el._upd=upd; el._box=box;
@@ -1161,13 +1189,14 @@ function openPending(){
     const box=el._box, upd=el._upd, tgt=pd.target||S.words;
     if(a==="setup"){ if(await copyText(pd.setup)){ pd.copied="setup"; pd.setupCopied=true; pd.primed=false; pd.step=Math.max(pd.step,2); if(pd.step===3&&!box.value.trim()) pd.step=2; S.lastPrimedH=pd.h; save(); draw(); toast("설정을 복사했어요",1400) } else toast("복사하지 못했어요. 다시 눌러주세요") }
     if(a==="request"){ if(await copyText(pd.request)){ pd.copied="request"; pd.step=3; save(); draw(); toast("집필 요청을 복사했어요",1400) } else toast("복사하지 못했어요. 다시 눌러주세요") }
-    if(a==="paste"){ try{ const t=await navigator.clipboard.readText(); if(t){ box.value=t; upd() } else toast("클립보드가 비어 있어요") }catch(_){ box.focus(); toast("입력칸을 길게 눌러 붙여넣어 주세요",2400) } }
-    if(a==="contcopy"){ const w=wordCount(cleanPaste(box.value)), steps=pd.steps||[], dn=stepsDone(box.value);
-      const msg=pd.split&&steps.length&&dn<steps.length?stepPrompt(dn,steps,pd.per||Math.round(tgt/steps.length)):contPrompt(w,tgt,steps,box.value);
+    if(a==="paste"){ try{ const t=await navigator.clipboard.readText(); if(t){ box.value=t; pd.ci=0; upd() } else toast("클립보드가 비어 있어요") }catch(_){ box.focus(); toast("입력칸을 길게 눌러 붙여넣어 주세요",2400) } }
+    if(a==="contcopy"){ const w=wordCount(cleanPaste(box.value)), steps=pd.steps||[], ch=pd.split?pd.chunks||[]:[];
+      const msg=ch.length&&pd.ci<ch.length?chunkPrompt(pd.ci,ch,steps,w,tgt):contPrompt(w,tgt,steps,box.value);
       toast(await copyText(msg)?"복사했어요. 같은 Gemini 대화에 붙여넣어 주세요":"복사하지 못했어요. 다시 눌러주세요",2600) }
     if(a==="append"){ try{ const t=await navigator.clipboard.readText(); if(!t.trim()){ toast("클립보드가 비어 있어요"); return }
         if(box.value.includes(t.trim().slice(0,80))){ toast("이미 붙여넣은 내용이에요. Gemini의 새 답을 복사해 와주세요",2600); return }
-        box.value=joinParts(box.value,cleanPaste(t)); upd(); box.scrollTop=box.scrollHeight; toast("이어 붙였어요",1200)
+        const ch=pd.split?pd.chunks||[]:[]; box.value=joinParts(box.value,cleanPaste(t));
+        if(ch.length&&pd.ci<ch.length){ pd.ci++; pd.lastW=wordCount(cleanPaste(box.value)) } upd(); box.scrollTop=box.scrollHeight; toast("이어 붙였어요",1200)
       }catch(_){ box.focus(); box.setSelectionRange(box.value.length,box.value.length); box.value=box.value.replace(/\s*$/,"\n\n"); toast("입력칸 맨 끝을 길게 눌러 붙여넣어 주세요",2600) } }
     if(a==="cancel"){
       if(b.dataset.armed!=="1"&&box.value.trim()){ b.dataset.armed="1"; toast("붙여넣은 내용이 있어요. 한 번 더 누르면 취소돼요",2000); return }
