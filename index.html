@@ -94,6 +94,31 @@ select.line-input{appearance:none;-webkit-appearance:none}
 .genre .sel svg{position:absolute;right:2px;top:50%;width:16px;height:16px;transform:translateY(-50%) rotate(90deg);color:var(--ink3);pointer-events:none}
 .genre-custom{margin-top:10px}
 textarea.line-input{resize:none;overflow:hidden;line-height:1.6;min-height:46px;display:block;font-family:inherit}
+.lbl{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:700;color:var(--ink2);margin-top:30px}
+.lbl .textbtn{font-size:13.5px;padding:4px 0;color:var(--ink)}
+.plotmemo{width:100%;margin-top:8px;border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:transparent;outline:none;resize:none;overflow:hidden;font:inherit;font-size:16px;line-height:1.6;min-height:52px;display:block}
+.plotmemo:focus{border-color:var(--ink3)}
+.plotmemo::placeholder{color:var(--ink3)}
+.expbtn{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:18px;border:1.5px solid var(--ink);font-size:14px;font-weight:700;margin-top:10px}
+.expbtn svg{width:15px;height:15px}
+.expbtn:disabled{opacity:.45}
+.pst{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.pst .n{width:18px;font-size:13px;color:var(--ink3);flex:none;padding-top:5px;font-variant-numeric:tabular-nums}
+.pst .bd{flex:1;min-width:0}
+.pst input,.pst textarea{width:100%;border:0;background:transparent;outline:none;font:inherit;color:inherit;resize:none;overflow:hidden;display:block;padding:2px 0}
+.pst input{font-size:15.5px;font-weight:700}
+.pst textarea{font-size:13.5px;color:var(--ink2);line-height:1.55;min-height:22px}
+.pst input::placeholder,.pst textarea::placeholder{color:var(--ink3);font-weight:500}
+.pst .x{color:var(--ink3);flex:none;width:28px;height:28px;display:grid;place-items:center}
+.pst .x svg{width:15px;height:15px}
+.addstep{display:flex;align-items:center;gap:10px;padding:12px 0;color:var(--ink3);font-size:15px}
+.addstep svg{width:16px;height:16px}
+.splitrow{display:flex;align-items:center;gap:12px;margin-top:22px;padding:14px 0;border-top:1px solid var(--line)}
+.splitrow span{flex:1;font-size:15.5px;font-weight:600}
+.tog{width:46px;height:28px;border-radius:14px;background:var(--line);position:relative;flex:none;transition:background .2s}
+.tog:after{content:"";position:absolute;left:3px;top:3px;width:22px;height:22px;border-radius:11px;background:var(--bg);box-shadow:0 1px 2px rgba(0,0,0,.2);transition:left .2s}
+.tog[aria-checked="true"]{background:var(--ink)}
+.tog[aria-checked="true"]:after{left:21px}
 .words{display:flex;align-items:baseline;gap:8px;margin-top:26px;font-size:15px;color:var(--ink3)}
 .words input{width:5.5em;border:0;border-bottom:1px solid var(--line);background:transparent;padding:4px 0 6px;text-align:right;font-weight:700;color:var(--ink);outline:none;font-variant-numeric:tabular-nums}
 .words input:focus{border-bottom-color:var(--accent)}
@@ -298,7 +323,7 @@ const DEFAULTS={
     {id:"t_daily",name:"일상",body:"{{등장인물}}의 {{일상 상황}}을 그린 짧은 이야기. 분위기는 {{분위기}}."},
     {id:"t_cont",name:"이어 쓰기",body:"앞 이야기에 바로 이어서, {{다음 전개}}.",cont:true}
   ],
-  works:[], activeWork:null, activeTemplate:"t_short", words:1500, drafts:{}, scene:"", genre:"", genreCustom:"", randKw:"", contStory:null,
+  works:[], activeWork:null, activeTemplate:"t_short", words:1500, drafts:{}, scene:"", genre:"", genreCustom:"", randKw:"", plotMemo:"", plotSteps:[], splitWrite:null, contStory:null,
   stories:[], lastRead:null,
   reader:{bg:"theme",font:"serif",size:18,lh:1.9,flow:"page"}
 };
@@ -321,6 +346,7 @@ const P={
   dice:'<rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r=".9" fill="currentColor"/><circle cx="15" cy="15" r=".9" fill="currentColor"/><circle cx="15" cy="9" r=".9" fill="currentColor"/><circle cx="9" cy="15" r=".9" fill="currentColor"/>',
   check:'<path d="M5 12l5 5L20 7"/>',
   up:'<path d="M6 15l6-6 6 6"/>',dn:'<path d="M6 9l6 6 6-6"/>',
+  x:'<path d="M7 7l10 10M17 7L7 17"/>',redo:'<path d="M4 4v6h6M20 20v-6h-6"/><path d="M20 10a8 8 0 00-14-4M4 14a8 8 0 0014 4"/>',
   stop:'<rect x="7" y="7" width="10" height="10" rx="1.5"/>'
 };
 const ic=(n,w)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"${w?` style="width:${w}px;height:${w}px"`:""}>${P[n]}</svg>`;
@@ -428,8 +454,14 @@ function vWrite(){
       <option value="">선택 안 함</option>${GENRES.map(([g])=>`<option value="${g}" ${S.genre===g?"selected":""}>${g}</option>`).join("")}<option value="custom" ${S.genre==="custom"?"selected":""}>직접 작성</option>
     </select>${ic("chev")}</div></div>
     ${S.genre==="custom"?`<input class="line-input genre-custom" id="genreCustom" placeholder="예: 질투 + 후회남주, 오피스 로맨스" value="${esc(S.genreCustom)}" autocomplete="off">`:""}
-    <textarea class="line-input" id="scene" rows="1" placeholder="넣고 싶은 장면">${esc(S.scene)}</textarea>
+    <div class="lbl">전개${S.plotSteps.length?`<button class="textbtn" data-act="expandplot" style="display:inline-flex;align-items:center;gap:4px">${ic("redo",14)}다시 펼치기</button>`:""}</div>
+    <textarea class="plotmemo" id="plotMemo" rows="1" placeholder="사고 → 피함 → 삽질 → 클라이맥스 → 썸 시작">${esc(S.plotMemo)}</textarea>
+    ${S.plotSteps.length?`<div id="steps">${S.plotSteps.map((p,i)=>`<div class="pst" data-i="${i}"><span class="n">${i+1}</span><div class="bd"><input class="sk" value="${esc(p.k)}" placeholder="단계" autocomplete="off"><textarea class="sd" rows="1" placeholder="장면">${esc(p.d)}</textarea></div><button class="x" data-act="delstep" data-i="${i}" aria-label="단계 삭제">${ic("x")}</button></div>`).join("")}<button class="addstep" data-act="addstep">${ic("plus")}단계 추가</button></div>`
+      :`<button class="expbtn" data-act="expandplot" ${S.plotMemo.trim()?"":"disabled"}>${ic("spark")}단계로 펼치기</button>`}
+    <div class="lbl">꼭 넣을 장면</div>
+    <textarea class="line-input" id="scene" rows="1" style="margin-top:2px">${esc(S.scene)}</textarea>
     <label class="words"><span>분량</span><input id="words" type="text" inputmode="numeric" pattern="[0-9]*" value="${S.words}" aria-label="분량(어절)" autocomplete="off"><span>어절</span></label>
+    ${S.plotSteps.length>=2?`<div class="splitrow"><span>단계별로 나눠 쓰기</span><button class="tog" role="switch" aria-checked="${isSplit()}" data-act="togsplit" aria-label="단계별로 나눠 쓰기"></button></div>`:""}
   </div>
   <div class="cta-wrap"><button class="cta" data-act="generate">${ic("spark")}${S.mode==="app"?"Gemini 앱으로 보내기":"Gemini로 쓰기"}</button></div>`;
 }
@@ -449,7 +481,14 @@ function bindWrite(){
   wi.addEventListener("input",()=>{ wi.value=wi.value.replace(/[^0-9]/g,"").slice(0,5); const n=+wi.value; if(n>=WMIN&&n<=WMAX){ S.words=n; save() } });
   wi.addEventListener("blur",()=>{ let n=+wi.value||S.words; n=Math.min(WMAX,Math.max(WMIN,n)); if(+wi.value&&+wi.value!==n) toast(`분량은 ${WMIN}~${WMAX.toLocaleString()}어절 사이로 정할 수 있어요`); S.words=n; wi.value=n; save() });
   app.querySelector("#contStory")?.addEventListener("change",e=>{ S.contStory=e.target.value||null; save() });
+  const pm=app.querySelector("#plotMemo"); growTA(pm);
+  pm.addEventListener("input",()=>{ S.plotMemo=pm.value; growTA(pm); save(); const eb=app.querySelector(".expbtn"); if(eb) eb.disabled=!pm.value.trim() });
+  app.querySelectorAll(".pst").forEach(row=>{ const i=+row.dataset.i, k=row.querySelector(".sk"), d=row.querySelector(".sd"); growTA(d);
+    k.addEventListener("input",()=>{ S.plotSteps[i].k=k.value; save() });
+    d.addEventListener("input",()=>{ S.plotSteps[i].d=d.value; growTA(d); save() }); });
 }
+function isSplit(){ return S.plotSteps.length>=2&&(S.splitWrite===null?S.words>=6000:!!S.splitWrite) }
+function keepScroll(fn){ const y=app.querySelector(".scroll")?.scrollTop||0; fn(); const sc=app.querySelector(".scroll"); if(sc) sc.scrollTop=y }
 
 /* ───────── 설정집 ───────── */
 function memoPreview(w){ const l=(w.memo||"").split("\n").map(x=>x.trim()).filter(x=>x&&!/^\[.*\]$/.test(x)); return l.slice(0,2).join(" · ")||"아직 비어 있어요" }
@@ -521,6 +560,10 @@ const ACT={
   settheme(d){ S.theme=d.k; applyTheme(); save(); render() },
   open(d){ openReader(d.id) },
   tpl(d){ S.activeTemplate=d.id; save(); render() },
+  expandplot(d,b){ expandPlot(b) },
+  addstep(){ S.plotSteps.push({k:"",d:""}); save(); keepScroll(render); const ins=app.querySelectorAll(".pst .sk"); ins[ins.length-1]?.focus() },
+  delstep(d){ S.plotSteps.splice(+d.i,1); save(); keepScroll(render) },
+  togsplit(){ S.splitWrite=!isSplit(); save(); keepScroll(render) },
   randomfill(d,b){
     const sh=sheet(`<div style="font-weight:700;font-size:17px;margin-bottom:6px">랜덤으로 채우기</div>
       <p class="hint" style="margin:0 0 4px">장르와 분량은 그대로 두고 나머지를 Gemini가 채워요.</p>
@@ -536,7 +579,7 @@ const ACT={
   wkmore(d){ libMore[d.k]=true; const y=app.querySelector(".scroll")?.scrollTop||0; render(); const sc=app.querySelector(".scroll"); if(sc) sc.scrollTop=y },
   resetwrite(d,b){
     if(b.dataset.armed!=="1"){ b.dataset.armed="1"; b.textContent="한 번 더 누르면 비워져요"; clearTimeout(b._t); b._t=setTimeout(()=>{ if(b.isConnected){ b.dataset.armed=""; b.textContent="초기화" } },2500); return }
-    S.drafts[curTpl().id]={}; S.scene=""; S.genre=""; S.genreCustom=""; save(); render(); toast("입력한 내용을 비웠어요",1400) },
+    S.drafts[curTpl().id]={}; S.scene=""; S.genre=""; S.genreCustom=""; S.plotMemo=""; S.plotSteps=[]; S.splitWrite=null; save(); render(); toast("입력한 내용을 비웠어요",1400) },
   pickwork(){
     const opts=[[null,"설정 없음"],...S.works.map(w=>[w.id,w.name])];
     sheet(opts.map(([id,n])=>`<button class="opt" data-id="${id??""}" aria-checked="${(S.activeWork||"")===(id||"")}">${esc(n)}${(S.activeWork||"")===(id||"")?ic("chev",0).replace(P.chev,'<path d="M5 12l5 5L20 7"/>'):""}</button>`).join("")+`<button class="opt" data-new="1" style="color:var(--ink3)">작품 추가</button>`,
@@ -647,7 +690,8 @@ function storyMeta(){
     sum=(sum.split(/(?<=[.!?])\s/)[0]||"").replace(/\s*이야기\.?$/,"").replace(/[.\s,]+$/,"").replace(/\s{2,}/g," ").trim();
   }
   const genre=S.genre==="custom"?(S.genreCustom||"").trim():S.genre;
-  return {summary:sum||S.scene.trim(),genre,scene:S.scene.trim()};
+  const steps=S.plotSteps.filter(x=>(x.k||x.d).trim());
+  return {summary:sum||steps[0]?.d||S.scene.trim()||S.plotMemo.trim(),genre,scene:S.scene.trim(),plot:{memo:S.plotMemo.trim(),steps}};
 }
 function buildPrompt(){
   const t=curTpl(), d=S.drafts[t.id]||{};
@@ -669,9 +713,13 @@ function buildPrompt(){
     if(past.length) user+=`\n\n[이전 작품 — 소재·구조가 겹치지 않게]\n${past.join("\n")}`;
   }
   const gtx=genreText(); if(gtx) user+=`\n\n[장르]\n${gtx}`;
+  const steps=S.plotSteps.filter(x=>(x.k||x.d).trim()), split=steps.length>=2&&isSplit(), per=Math.max(100,Math.round(S.words/Math.max(1,steps.length)/100)*100);
+  if(steps.length) user+=`\n\n[전개] 아래 순서와 사건을 반드시 지키고, 사이 장면과 감정선은 자유롭게 채워. 각 단계는 "## 번호" 소제목으로 시작해.\n`+steps.map((x,i)=>`${i+1}. ${x.k||"단계 "+(i+1)}: ${x.d} (약 ${per.toLocaleString()}어절)`).join("\n");
+  else if(S.plotMemo.trim()) user+=`\n\n[전개 메모]\n${S.plotMemo.trim()}\n이 메모의 흐름을 순서대로 지키되, 각 항목을 구체적인 사건과 감정선으로 풀어서 써. 장 구분은 "## 1", "## 2"처럼 해줘.`;
   if(S.scene.trim()) user+=`\n\n[꼭 넣을 장면]\n${S.scene.trim()}`;
   user+=`\n\n[분량]\n본문 ${S.words.toLocaleString()}어절 이상(어절 = 띄어쓰기로 나뉜 단어 하나). 이 분량은 하한이니 모자라게 쓰지 마.`;
-  if(S.words>CHUNK) user+=`\n분량이 길어서 여러 번에 나눠 이어 쓰게 될 거야. 이번 응답에서는 쓸 수 있는 만큼 최대한 길게 쓰고, 요약하거나 서둘러 결말로 가지 마. 목표 분량에 아직 한참 못 미쳤다면 결말을 쓰지 말고 장면이 이어지는 곳에서 멈춰도 돼. 장 구분은 "## 1", "## 2"처럼 써줘.`;
+  if(split) user+=`\n\n분량이 길어서 단계별로 나눠 쓸 거야. 이번 응답에서는 1단계("${steps[0].k}")만 약 ${per.toLocaleString()}어절로 써줘. "## 1"로 시작하고, 2단계 내용은 아직 쓰지 마.`;
+  else if(S.words>CHUNK) user+=`\n분량이 길어서 여러 번에 나눠 이어 쓰게 될 거야. 이번 응답에서는 쓸 수 있는 만큼 최대한 길게 쓰고, 요약하거나 서둘러 결말로 가지 마. 목표 분량에 아직 한참 못 미쳤다면 결말을 쓰지 말고 장면이 이어지는 곳에서 멈춰도 돼. 장 구분은 "## 1", "## 2"처럼 써줘.`;
   let prev=null;
   if(t.cont){
     prev=S.stories.find(s=>s.id===S.contStory);
@@ -680,7 +728,7 @@ function buildPrompt(){
     user=`[앞 이야기: ${prev.title}]\n${body}\n\n`+user+"\n\n제목은 앞 이야기와 이어지는 회차 제목으로 지어줘.";
   }
   const setup=sys+SETUP_TAIL, request=user+REQUEST_TAIL;
-  return {sys,user,setup,request,h:hashStr(setup),missing,prev,w};
+  return {sys,user,setup,request,h:hashStr(setup),missing,prev,w,steps,split,per};
 }
 const SYS_SHORT="너는 한국어 소설가야. 사용자가 먼저 설정과 지침을 보내고, 다음 메시지로 집필을 요청한다. 설정과 지침은 끝까지 지킨다.";
 const SETUP_TAIL="\n\n---\n위 내용은 앞으로 쓸 소설의 설정과 지침이야. 아직 소설은 쓰지 마.\n숙지했다면 주연, 호칭·말투, 꼭 지킬 것을 3줄 이내로 요약하고, 마지막 줄에 '준비됐어요.'라고만 답해줘. 다음 메시지로 집필 요청을 보낼게.";
@@ -688,8 +736,10 @@ const REQUEST_TAIL="\n\n앞에서 숙지한 설정과 지침을 지켜서 소설
 function hashStr(t){ let h=5381; for(let i=0;i<t.length;i++) h=((h<<5)+h+t.charCodeAt(i))|0; return (h>>>0).toString(36)+"_"+t.length }
 
 let gen=null;
-function contPrompt(have,target){
+function contPrompt(have,target,steps,text){
   const left=Math.max(0,target-have);
+  if(steps&&steps.length){ const dn=stepsDone(text); if(dn<steps.length){ const nx=steps[dn];
+    return `지금까지 본문 ${have.toLocaleString()}어절, ${dn}단계까지 썼어. 목표는 ${target.toLocaleString()}어절이야. 방금 쓴 마지막 문장 바로 다음부터 그대로 이어서 써줘. 제목, 요약, 앞 내용 반복, 인사말 없이 본문만.\n다음은 ${dn+1}단계야: ${nx.k}: ${nx.d}\n`+(dn+1===steps.length?"이 단계에서 이야기를 마무리하고 중심 소재를 결말에서 회수해줘.":"남은 단계 순서대로 이어가되, 서둘러 결말로 가지 마.") } }
   const finish=left<=CHUNK*1.15;
   return `지금까지 본문 ${have.toLocaleString()}어절을 썼어. 목표는 ${target.toLocaleString()}어절이야(어절 = 띄어쓰기로 나뉜 단어). `+
     `방금 쓴 마지막 문장 바로 다음부터 그대로 이어서 써줘. 제목, 요약, 앞 내용 반복, 인사말 없이 본문만.\n`+
@@ -722,8 +772,8 @@ async function streamOnce(body,ctrl,onText){
 async function generate(){
   if(S.mode==='app'){ sendToApp(); return }
   if(!S.apiKey||!S.model){ toast("설정에서 Gemini API 키와 모델을 먼저 연결해주세요",3200); tab="prefs"; render(); setTimeout(geminiEditor,50); return }
-  const p=buildPrompt(); if(p.error){ toast(p.error); return }
-  if(p.missing.length===curTpl().body.match(/\{\{/g)?.length && !S.scene.trim() && !genreText()){ toast("빈칸을 하나 이상 채워주세요"); return }
+  let p=buildPrompt(); if(p.error){ toast(p.error); return }
+  if(p.missing.length===curTpl().body.match(/\{\{/g)?.length && !S.scene.trim() && !genreText() && !S.plotMemo.trim()){ toast("빈칸을 하나 이상 채워주세요"); return }
   const ctrl=new AbortController(), target=S.words;
   gen={ctrl,text:"",title:"",meta:storyMeta(),workId:p.w?.id||null,tplName:curTpl().name,prev:p.prev,target,round:1};
   openLive();
@@ -731,6 +781,11 @@ async function generate(){
   const maxRounds=Math.min(15,Math.ceil(target/CHUNK)+3);
   let note=null;
   try{
+    // 0단계: 전개 메모만 있으면 먼저 단계로 펼치기
+    if(S.plotMemo.trim()&&!S.plotSteps.length){
+      gen.phase="plan"; updateLive();
+      try{ S.plotSteps=await fetchPlotSteps(ctrl.signal); save(); p=buildPrompt(); gen.meta=storyMeta() }catch(e){ if(e.name==="AbortError") throw e }
+    }
     // 1단계: 설정·지침 숙지 (같은 설정이면 이전 답을 재사용)
     S.primeCache ||= {};
     let ack=S.primeCache[p.h];
@@ -744,7 +799,8 @@ async function generate(){
     gen.phase="write"; updateLive();
     // 2단계: 집필 요청
     const contents=[{role:"user",parts:[{text:p.setup}]},{role:"model",parts:[{text:ack}]},{role:"user",parts:[{text:p.request}]}];
-    for(let round=1;round<=maxRounds;round++){
+    const rounds=p.split?p.steps.length:maxRounds; gen.steps=p.split?p.steps.length:0;
+    for(let round=1;round<=rounds;round++){
       gen.round=round; updateLive();
       const base=gen.text;
       let res;
@@ -760,10 +816,11 @@ async function generate(){
       }
       if(res.finish==="SAFETY"||res.finish==="PROHIBITED_CONTENT"){ note="안전 정책 때문에 중간에 멈췄어요"; break }
       const have=wordCount(gen.text);
+      if(p.split){ if(round===rounds) break; contents.push({role:"model",parts:[{text:res.out}]}); contents.push({role:"user",parts:[{text:stepPrompt(round,p.steps,p.per)}]}); continue }
       if(have>=target*0.95) break;
       if(round===maxRounds){ note=`목표보다 짧게 끝났어요 (${have.toLocaleString()}어절)`; break }
       contents.push({role:"model",parts:[{text:res.out}]});
-      contents.push({role:"user",parts:[{text:contPrompt(have,target)}]});
+      contents.push({role:"user",parts:[{text:contPrompt(have,target,p.steps,gen.text)}]});
     }
     finishGen(note);
   }catch(e){
@@ -789,7 +846,7 @@ function finishGen(note){
   const lb=document.getElementById("liveText");
   const readAt=lb&&lb.scrollHeight>lb.clientHeight?Math.min(1,lb.scrollTop/lb.scrollHeight):0;
   const {title,body}=splitTitle(cleanPaste(gen.text));
-  const s={id:uid(),title:title||(gen.prev?gen.prev.title+" (이어서)":"제목 없는 이야기"),text:body.trim(),workId:gen.workId,tpl:gen.tplName,summary:gen.meta?.summary||"",genre:gen.meta?.genre||"",scene:gen.meta?.scene||"",createdAt:Date.now(),progress:readAt,page:0,prevId:gen.prev?.id||null};
+  const s={id:uid(),title:title||(gen.prev?gen.prev.title+" (이어서)":"제목 없는 이야기"),text:body.trim(),workId:gen.workId,tpl:gen.tplName,summary:gen.meta?.summary||"",genre:gen.meta?.genre||"",scene:gen.meta?.scene||"",plot:gen.meta?.plot||null,createdAt:Date.now(),progress:readAt,page:0,prevId:gen.prev?.id||null};
   S.stories.unshift(s); S.lastRead=s.id; libOpen=null; save(); gen=null; tab="library"; stack=[]; render();
   closeLive(); openReader(s.id); if(note) toast(note,3200);
 }
@@ -827,8 +884,8 @@ function updateLive(){
     const box=document.getElementById("liveText"); if(!box||!gen) return;
     const {title,body}=splitTitle(gen.text.includes("\n")?gen.text:gen.text+"\n");
     box.innerHTML=(title?`<p class="ttl">${esc(title)}</p>`:"")+bodyHTML(body);
-    const wl=document.querySelector("#liveReader .wlabel"); if(wl) wl.textContent=gen.phase==="prime"?"Gemini가 설정을 읽는 중":"Gemini가 쓰는 중";
-    const wr=document.querySelector("#liveReader .wcount"); if(wr&&gen.phase==="prime"){ wr.textContent=""; return } if(wr&&gen.target) wr.textContent=` · ${wordCount(gen.text).toLocaleString()} / ${gen.target.toLocaleString()}어절${gen.round>1?` · ${gen.round}번째 이어 쓰는 중`:""}`;
+    const wl=document.querySelector("#liveReader .wlabel"); if(wl) wl.textContent=gen.phase==="plan"?"Gemini가 전개를 짜는 중":gen.phase==="prime"?"Gemini가 설정을 읽는 중":"Gemini가 쓰는 중";
+    const wr=document.querySelector("#liveReader .wcount"); if(wr&&(gen.phase==="prime"||gen.phase==="plan")){ wr.textContent=""; return } if(wr&&gen.target) wr.textContent=` · ${wordCount(gen.text).toLocaleString()} / ${gen.target.toLocaleString()}어절${gen.steps?` · ${Math.min(gen.round,gen.steps)}/${gen.steps}단계`:(gen.round>1?` · ${gen.round}번째 이어 쓰는 중`:"")}`;
   });
 }
 function closeLive(){ document.getElementById("liveReader")?.remove() }
@@ -980,7 +1037,7 @@ async function randomFill(b,keywords){
   if(t.cont&&!prev){ toast("이어 쓸 이야기를 먼저 골라주세요"); return }
   const ids=fill.map((k,i)=>"f"+i);
   let ctx=`2차 창작 소설의 기획안을 랜덤으로 채워줘. 뻔하지 않고 구체적인 아이디어로, 매번 다르게.\n\n[템플릿]\n${t.body}\n\n`;
-  ctx+=`[채울 칸]\n${fill.map((k,i)=>`${ids[i]}: {{${k}}}`).join("\n")}\nscene: 이야기에 꼭 넣을 장면 하나 (한두 문장)\n\n`;
+  ctx+=`[채울 칸]\n${fill.map((k,i)=>`${ids[i]}: {{${k}}}`).join("\n")}\nscene: 이야기에 꼭 넣을 장면 하나 (한두 문장)\nplot: 전체 전개를 4~6개의 짧은 키워드로, " → "로 연결 (예: 사고 → 피함 → 삽질 → 고백 → 썸 시작)\n\n`;
   if(keywords) ctx+=`[핵심 키워드] ${keywords}\n이 키워드들을 이야기의 중심 소재로 삼아 모든 칸과 장면에 자연스럽게 녹여줘. 키워드를 그대로 나열하지 말고 이야기로 엮어.\n\n`;
   ctx+=`각 칸은 템플릿 문장 안에 그대로 들어가므로 앞뒤 조사·어미와 자연스럽게 이어지는 짧은 구로 써줘. 마침표나 따옴표는 넣지 마.\n`;
   if(chars.length) ctx+=`\n[이미 정해진 인물] ${chars.map(k=>`${k}=${(d[k]||"").trim()||"(미정)"}`).join(", ")} — 이 인물은 바꾸지 말고 그대로 활용해.`;
@@ -989,12 +1046,12 @@ async function randomFill(b,keywords){
   if(prev) ctx+=`\n\n[앞 이야기 끝부분: ${prev.title}]\n${prev.text.slice(-3000)}`;
   const past=S.stories.filter(x=>(x.workId||null)===(w?.id||null)).slice(0,15).map(x=>x.title);
   if(past.length) ctx+=`\n\n[이미 쓴 이야기 — 소재가 겹치지 않게]\n${past.join(", ")}`;
-  const props={}; ids.forEach((id,i)=>props[id]={type:"STRING",description:fill[i]}); props.scene={type:"STRING",description:"꼭 넣을 장면"};
+  const props={}; ids.forEach((id,i)=>props[id]={type:"STRING",description:fill[i]}); props.scene={type:"STRING",description:"꼭 넣을 장면"}; props.plot={type:"STRING",description:"전개 메모"};
   randBusy=true; b.disabled=true; b.classList.add("busy");
   try{
     const r=await apiFetch(`${API}/${S.model}:generateContent`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
       contents:[{role:"user",parts:[{text:ctx}]}],
-      generationConfig:{temperature:Math.max(1.1,S.temperature),responseMimeType:"application/json",responseSchema:{type:"OBJECT",properties:props,required:[...ids,"scene"]}}})},S.apiKey);
+      generationConfig:{temperature:Math.max(1.1,S.temperature),responseMimeType:"application/json",responseSchema:{type:"OBJECT",properties:props,required:[...ids,"scene","plot"]}}})},S.apiKey);
     const j=await r.json().catch(()=>({}));
     if(!r.ok) throw new Error(apiErr(r.status,j.error?.message||""));
     const txt=(j.candidates?.[0]?.content?.parts||[]).filter(p=>!p.thought).map(p=>p.text||"").join("");
@@ -1002,11 +1059,49 @@ async function randomFill(b,keywords){
     const clean=v=>String(v||"").replace(/\s+/g," ").replace(/^[\s"“'‘]+|[\s"”'’.。]+$/g,"").trim();
     fill.forEach((k,i)=>{ const v=clean(o[ids[i]]); if(v) d[k]=v });
     if(clean(o.scene)) S.scene=String(o.scene).trim();
+    if(clean(o.plot)){ S.plotMemo=String(o.plot).replace(/\s*(->|>|→)\s*/g," → ").trim(); S.plotSteps=[] }
     save(); const y=app.querySelector(".scroll")?.scrollTop||0; render(); const sc=app.querySelector(".scroll"); if(sc) sc.scrollTop=y;
     toast(keywords?"키워드로 채웠어요":"랜덤으로 채웠어요",1400);
   }catch(e){ toast(e.message==="Failed to fetch"?"인터넷 연결을 확인해주세요":e.message,3600) }
   finally{ randBusy=false; if(b.isConnected){ b.disabled=false; b.classList.remove("busy") } }
 }
+
+/* ───────── 전개 펼치기 (API) ───────── */
+async function fetchPlotSteps(signal){
+  const t=curTpl(), d=S.drafts[t.id]||{}, w=S.works.find(x=>x.id===S.activeWork);
+  const filled=josa(t.body.replace(/\{\{(.+?)\}\}/g,(_,k)=>(d[k]||"").trim()||`(${k}: 미정)`));
+  let ctx=`2차 창작 소설의 전개를 단계별 장면으로 구체화해줘.\n\n[전개 메모]\n${S.plotMemo.trim()}\n\n[이야기 개요]\n${filled}`;
+  const g=genreText(); if(g) ctx+=`\n\n[장르]\n${g}`;
+  if(S.scene.trim()) ctx+=`\n\n[꼭 넣을 장면]\n${S.scene.trim()}`;
+  if(w&&(w.memo||"").trim()) ctx+=`\n\n[작품 설정: ${w.name}]\n${w.memo.trim().slice(0,6000)}`;
+  ctx+=`\n\n[분량] 전체 약 ${S.words.toLocaleString()}어절\n\n규칙:\n- 메모가 화살표(→, ->, >), 쉼표, 줄바꿈으로 나뉘어 있으면 그 개수와 순서를 그대로 지키고, title에는 각 항목을 그대로 써.\n- 메모가 문장이면 분량에 맞게 4~6단계로 나누고 title은 2~8자로 짧게.\n- detail은 그 단계에서 실제로 일어나는 구체적인 사건 1~2문장. 인물 이름을 쓰고, 앞뒤 단계와 인과로 이어지게.\n- 꼭 넣을 장면이 있으면 가장 어울리는 단계의 detail에 넣어.`;
+  const r=await apiFetch(`${API}/${S.model}:generateContent`,{method:"POST",signal,headers:{"Content-Type":"application/json"},body:JSON.stringify({
+    contents:[{role:"user",parts:[{text:ctx}]}],
+    generationConfig:{temperature:0.9,responseMimeType:"application/json",responseSchema:{type:"OBJECT",properties:{steps:{type:"ARRAY",items:{type:"OBJECT",properties:{title:{type:"STRING"},detail:{type:"STRING"}},required:["title","detail"]}}},required:["steps"]}}})},S.apiKey);
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(apiErr(r.status,j.error?.message||""));
+  const txt=(j.candidates?.[0]?.content?.parts||[]).filter(p=>!p.thought).map(p=>p.text||"").join("");
+  let o; try{ o=JSON.parse(txt.replace(/^```(json)?|```$/g,"").trim()) }catch(_){ throw new Error("전개를 읽지 못했어요. 다시 눌러주세요.") }
+  const steps=(o.steps||[]).map(x=>({k:String(x.title||"").trim(),d:String(x.detail||"").trim()})).filter(x=>x.k||x.d).slice(0,12);
+  if(!steps.length) throw new Error("전개를 만들지 못했어요. 메모를 조금 더 적어주세요.");
+  return steps;
+}
+let plotBusy=false;
+async function expandPlot(b){
+  if(plotBusy) return;
+  if(!S.plotMemo.trim()){ app.querySelector("#plotMemo")?.focus(); return }
+  if(!S.apiKey||!S.model){ toast("단계로 펼치기는 Gemini API를 써요. 설정 › API 연결에서 키와 모델을 넣어주세요",3400); return }
+  plotBusy=true; if(b){ b.disabled=true; b.dataset.label=b.innerHTML; b.textContent="펼치는 중…" }
+  try{ S.plotSteps=await fetchPlotSteps(); save(); keepScroll(render) }
+  catch(e){ toast(e.message==="Failed to fetch"?"인터넷 연결을 확인해주세요":e.message,3600); if(b&&b.isConnected){ b.disabled=false; b.innerHTML=b.dataset.label } }
+  finally{ plotBusy=false }
+}
+function stepPrompt(i,steps,per){
+  const st=steps[i], last=i===steps.length-1;
+  return `이어서 ${i+1}단계를 써줘. 방금 쓴 마지막 문장 바로 다음부터, "## ${i+1}" 소제목으로 시작해. 제목, 요약, 앞 내용 반복, 인사말 없이 본문만.\n${i+1}. ${st.k}: ${st.d} (약 ${per.toLocaleString()}어절)\n`+
+    (last?"이 단계가 마지막이야. 이야기를 마무리하고 중심 소재를 결말에서 회수해줘.":`아직 ${i+2}단계 내용은 쓰지 마.`);
+}
+function stepsDone(text){ let m=0; for(const x of (text||"").matchAll(/^\s*#{2,3}\s*(\d+)/gm)) m=Math.max(m,+x[1]); return m }
 
 /* ───────── 붙여넣기 모드 ───────── */
 async function copyText(t){
@@ -1016,9 +1111,9 @@ async function copyText(t){
 }
 function sendToApp(){
   const p=buildPrompt(); if(p.error){ toast(p.error); return }
-  if(p.missing.length===curTpl().body.match(/\{\{/g)?.length && !S.scene.trim() && !genreText()){ toast("빈칸을 하나 이상 채워주세요"); return }
+  if(p.missing.length===curTpl().body.match(/\{\{/g)?.length && !S.scene.trim() && !genreText() && !S.plotMemo.trim()){ toast("빈칸을 하나 이상 채워주세요"); return }
   const primed=S.lastPrimedH===p.h;
-  S.pending={setup:p.setup,request:p.request,h:p.h,meta:storyMeta(),step:primed?2:1,primed,target:S.words,workId:p.w?.id||null,tplName:curTpl().name,prevId:p.prev?.id||null,at:Date.now(),draft:""}; save();
+  S.pending={setup:p.setup,request:p.request,h:p.h,meta:storyMeta(),steps:p.steps,split:p.split,per:p.per,step:primed?2:1,primed,target:S.words,workId:p.w?.id||null,tplName:curTpl().name,prevId:p.prev?.id||null,at:Date.now(),draft:""}; save();
   const first=primed?p.request:p.setup;
   copyText(first).then(ok=>{ if(ok){ if(primed) S.pending.step=3; else { S.pending.step=2; S.lastPrimedH=p.h } S.pending.copied=primed?"request":"setup"; S.pending.setupCopied=!primed; save() } openPending() });
 }
@@ -1045,14 +1140,18 @@ function openPending(){
        <textarea class="pastebox" id="pasteBox" placeholder="Gemini의 답을 여기에 붙여넣기" ${st<3?'style="opacity:.55"':""}>${esc(pd.draft||"")}</textarea>
        <div class="minirow" style="margin-top:12px"><button class="textbtn" data-p="paste">클립보드에서 붙여넣기</button><span id="pcount" style="margin-left:auto;font-size:13px;color:var(--ink3);font-variant-numeric:tabular-nums"></span></div>
        <div id="pmore" hidden style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">
-         <div style="font-size:14px;color:var(--ink2);line-height:1.6">아직 목표 분량보다 짧아요. 같은 Gemini 대화에 이어 쓰기 요청을 보내고, 받은 답을 이어 붙이세요.</div>
-         <div class="minirow" style="margin-top:12px"><button class="ghost" data-p="contcopy">${ic("copy")}이어 쓰기 요청 복사</button><button class="ghost" data-p="append">${ic("plus")}이어 붙이기</button></div>
+         <div id="pmoreTxt" style="font-size:14px;color:var(--ink2);line-height:1.6"></div>
+         <div class="minirow" style="margin-top:12px"><button class="ghost" data-p="contcopy">${ic("copy")}<span id="contLbl">이어 쓰기 요청 복사</span></button><button class="ghost" data-p="append">${ic("plus")}이어 붙이기</button></div>
        </div>
      </div>
      <div class="cta-wrap" style="padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))"><button class="cta" data-p="done" id="pdone">${ic("book")}서재에 넣기</button></div>`;
     const box=el.querySelector("#pasteBox"), done=el.querySelector("#pdone"), cnt=el.querySelector("#pcount");
     const tgt=pd.target||S.words, more=el.querySelector("#pmore");
-    const upd=()=>{ const n=box.value.trim().length, w=wordCount(cleanPaste(box.value)); done.disabled=n<20; cnt.textContent=n?`${w.toLocaleString()} / ${tgt.toLocaleString()}어절`:""; more.hidden=!(n>=20&&w<tgt*0.95); pd.draft=box.value; if(n&&pd.step<3) pd.step=3, box.style.opacity=""; save() };
+    const upd=()=>{ const n=box.value.trim().length, w=wordCount(cleanPaste(box.value)); done.disabled=n<20; cnt.textContent=n?`${w.toLocaleString()} / ${tgt.toLocaleString()}어절`:""; const steps=pd.steps||[], dn=stepsDone(box.value), splitLeft=pd.split&&steps.length&&dn<steps.length;
+      more.hidden=!(n>=20&&(splitLeft||w<tgt*0.95));
+      el.querySelector("#pmoreTxt").textContent=splitLeft?`${dn}/${steps.length}단계까지 붙여넣었어요. 같은 Gemini 대화에 다음 단계 요청을 보내고, 받은 답을 이어 붙이세요.`:"아직 목표 분량보다 짧아요. 같은 Gemini 대화에 이어 쓰기 요청을 보내고, 받은 답을 이어 붙이세요.";
+      el.querySelector("#contLbl").textContent=splitLeft?`${dn+1}단계 요청 복사`:"이어 쓰기 요청 복사";
+      pd.draft=box.value; if(n&&pd.step<3) pd.step=3, box.style.opacity=""; save() };
     box.addEventListener("input",upd); upd();
     el._upd=upd; el._box=box;
   };
@@ -1063,7 +1162,9 @@ function openPending(){
     if(a==="setup"){ if(await copyText(pd.setup)){ pd.copied="setup"; pd.setupCopied=true; pd.primed=false; pd.step=Math.max(pd.step,2); if(pd.step===3&&!box.value.trim()) pd.step=2; S.lastPrimedH=pd.h; save(); draw(); toast("설정을 복사했어요",1400) } else toast("복사하지 못했어요. 다시 눌러주세요") }
     if(a==="request"){ if(await copyText(pd.request)){ pd.copied="request"; pd.step=3; save(); draw(); toast("집필 요청을 복사했어요",1400) } else toast("복사하지 못했어요. 다시 눌러주세요") }
     if(a==="paste"){ try{ const t=await navigator.clipboard.readText(); if(t){ box.value=t; upd() } else toast("클립보드가 비어 있어요") }catch(_){ box.focus(); toast("입력칸을 길게 눌러 붙여넣어 주세요",2400) } }
-    if(a==="contcopy"){ const w=wordCount(cleanPaste(box.value)); toast(await copyText(contPrompt(w,tgt))?"이어 쓰기 요청을 복사했어요. 같은 Gemini 대화에 붙여넣어 주세요":"복사하지 못했어요. 다시 눌러주세요",2600) }
+    if(a==="contcopy"){ const w=wordCount(cleanPaste(box.value)), steps=pd.steps||[], dn=stepsDone(box.value);
+      const msg=pd.split&&steps.length&&dn<steps.length?stepPrompt(dn,steps,pd.per||Math.round(tgt/steps.length)):contPrompt(w,tgt,steps,box.value);
+      toast(await copyText(msg)?"복사했어요. 같은 Gemini 대화에 붙여넣어 주세요":"복사하지 못했어요. 다시 눌러주세요",2600) }
     if(a==="append"){ try{ const t=await navigator.clipboard.readText(); if(!t.trim()){ toast("클립보드가 비어 있어요"); return }
         if(box.value.includes(t.trim().slice(0,80))){ toast("이미 붙여넣은 내용이에요. Gemini의 새 답을 복사해 와주세요",2600); return }
         box.value=joinParts(box.value,cleanPaste(t)); upd(); box.scrollTop=box.scrollHeight; toast("이어 붙였어요",1200)
