@@ -451,6 +451,26 @@ svg{flex:none}
 .livebar .askrow{margin-top:0;background:var(--rbg);border-color:var(--rline)}
 .livebar .askrow input{color:var(--rink)}
 .livebar .askrow button{background:var(--rink);color:var(--rbg)}
+.plotcard{display:block;width:100%;text-align:left;cursor:pointer;background:var(--card);border-radius:16px;padding:16px 16px 6px;margin-top:4px}
+.plotcard .tt{font-family:var(--serif);font-size:21px;font-weight:700;letter-spacing:-.3px}
+.plotcard .lg{font-size:14px;line-height:1.6;color:var(--ink2);margin-top:6px;word-break:keep-all}
+.plotcard .kv{display:flex;gap:12px;font-size:13.5px;line-height:1.55;padding:9px 0;border-top:1px solid var(--line);word-break:keep-all}
+.plotcard .lg+.kv,.plotcard .tt+.kv{margin-top:12px}
+.plotcard .kv span:first-child{width:56px;flex:none;color:var(--ink3);font-weight:600}
+.lbl2{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:var(--ink3);font-weight:600;margin:18px 0 0}
+.lbl2 button{width:30px;height:30px;display:grid;place-items:center;color:var(--ink2);margin:-6px -6px -6px 0}
+.lbl2 button svg{width:16px;height:16px}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.tag{font-size:12.5px;padding:4px 10px;border-radius:12px;background:var(--fill);color:var(--ink2);line-height:1.4}
+.tag.dash{background:none;border:1px dashed var(--ink3);color:var(--ink3)}
+.nbeat{font-size:12px;color:var(--ink3);margin-top:6px}
+.sfrom{font-size:13.5px;color:var(--ink2);line-height:1.6}
+.frow{display:flex;gap:8px;margin-top:10px}
+.frow .btnfull{margin-top:0;flex:1}
+.btnsq{width:52px;height:52px;border-radius:14px;background:var(--fill);display:grid;place-items:center;flex:none}
+.btnsq svg{width:18px;height:18px}
+.btnfull.busy svg{animation:spin 1s linear infinite}
+input.shta{min-height:0;height:44px}
 </style>
 </head>
 <body>
@@ -602,56 +622,66 @@ function tplHTML(t){
   const d=S.drafts[t.id]||{};
   return "\u200B"+esc(t.body).replace(/\{\{(.+?)\}\}/g,(_,k)=>`<span class="blank" contenteditable="plaintext-only" spellcheck="false" data-k="${k}" data-ph="${k}">${esc(d[k]||"")}</span>`);
 }
-/* ───────── 새 이야기 · 메모장 ───────── */
+/* ───────── 새 이야기 · 메모 → 플롯 ───────── */
 const r100=x=>Math.max(100,Math.round(x/100)*100);
 const wc=t=>{ t=(t||"").trim(); return t?t.split(/\s+/).length:0 };
-function newSec(o){ return {id:uid(),title:"",words:1000,chk:true,memo:"",ai:"",...(o||{})} }
-function pad(){ if(!S.note||!Array.isArray(S.note.secs)||!S.note.secs.length) S.note={divided:false,secs:[newSec({words:S.words})]}; return S.note }
-function padTotal(){ const n=pad(); return n.divided?n.secs.reduce((a,s)=>a+(+s.words||0),0):S.words }
-function padSum(){ const n=pad(); return n.divided?n.secs.filter(s=>s.chk).reduce((a,s)=>a+(+s.words||0),0):S.words }
-let lastFocus={i:0,pos:0}, noteBusy=false;
-function busy(b,on){ if(!b||!b.isConnected) return; b.disabled=on; b.classList.toggle("busy",on) }
+function newSec(o){ return {id:uid(),title:"",words:1000,chk:true,scene:"",beat:"",from:"",...(o||{})} }
+function migrateNote(o){
+  const n={v:2,memo:"",plot:null,secs:[],fid:"살려서",nsteps:0};
+  if(o&&Array.isArray(o.secs)){
+    n.memo=o.secs.map(s=>[o.divided&&s.title?s.title:"",s.memo||""].filter(x=>x.trim()).join(": ")).filter(x=>x.trim()).join("\n");
+    if(o.divided) n.secs=o.secs.map(s=>newSec({title:s.title||"",words:+s.words||1000,chk:!!s.chk,scene:s.ai||s.memo||""}));
+  }
+  return n;
+}
+function pad(){ if(!S.note||S.note.v!==2) S.note=migrateNote(S.note); return S.note }
+function padTotal(){ const n=pad(); return n.secs.length?n.secs.reduce((a,s)=>a+(+s.words||0),0):S.words }
+function padSum(){ const n=pad(); return n.secs.length?n.secs.filter(s=>s.chk).reduce((a,s)=>a+(+s.words||0),0):S.words }
+let noteBusy=false;
+function busy(b,on,label){ if(!b||!b.isConnected) return; b.disabled=on; b.classList.toggle("busy",on);
+  if(label){ if(on){ b.dataset.l=b.innerHTML; b.innerHTML=`${ic("redo")}${label}` } else if(b.dataset.l) b.innerHTML=b.dataset.l } }
+const PLOT_KV=[["tone","톤"],["core","중심"],["ending","결말"],["motif","모티프"],["heart","마음고생"]];
 function infoLine(){
-  const t=curTpl(), d=S.drafts[t.id]||{};
-  const chars=[...new Set(Object.entries(d).filter(([k,v])=>CHAR_KEY.test(k)&&(v||"").trim()).map(([,v])=>v.trim()))].join(", ");
+  const prev=S.contStory?S.stories.find(x=>x.id===S.contStory):null;
   const g=S.genre==="custom"?(S.genreCustom||"").trim():S.genre;
-  const a=[S.activeWork?workName(S.activeWork):"설정 없음",chars].filter(Boolean).join(" · ");
-  const b=[g,t.name,padTotal().toLocaleString()+"어절"].filter(Boolean).join(" · ");
+  const a=S.activeWork?workName(S.activeWork):"설정 없음";
+  const b=[prev?`다음 편 · ${prev.title}`:"",g,padTotal().toLocaleString()+"어절"].filter(Boolean).join(" · ");
   return `<button class="ninfo" data-act="basic"><b>${esc(a)}</b><span>&nbsp;· ${esc(b)}</span>${ic("chev")}</button>`;
 }
 function vWrite(){
-  const n=pad(), view=S.noteView==="steps"?"steps":"memo", dv=n.divided;
-  const chk=(s,i)=>dv?`<button class="nchk" data-act="chk" data-i="${i}" aria-checked="${!!s.chk}" aria-label="체크">${ic("check")}</button>`:"";
-  const wIn=(s,i)=>`<input class="nw" data-i="${i}" inputmode="numeric" value="${dv?s.words:S.words}" aria-label="어절" autocomplete="off">`;
-  const rg=i=>dv?`<button class="nico" data-act="regen" data-i="${i}" aria-label="다시 펼치기">${ic("redo")}</button>`:"";
-  const head=`<div class="nhead">${backBtn()}<div class="seg2"><button data-act="noteview" data-k="memo" aria-pressed="${view==="memo"}">메모</button><button data-act="noteview" data-k="steps" aria-pressed="${view==="steps"}">단계</button></div><button class="resetbtn" data-act="resetwrite">초기화</button></div>`;
-  let body;
+  const n=pad(), view=S.noteView==="plot"?"plot":"memo", has=!!(n.plot||n.secs.length);
+  const head=`<div class="nhead">${backBtn()}<div class="seg2"><button data-act="noteview" data-k="memo" aria-pressed="${view==="memo"}">메모</button><button data-act="noteview" data-k="plot" aria-pressed="${view==="plot"}">플롯</button></div><button class="resetbtn" data-act="resetwrite">초기화</button></div>`;
   if(view==="memo"){
-    if(!dv) body=`<textarea class="nta solo" data-i="0" placeholder="메모">${esc(n.secs[0].memo)}</textarea>${n.secs[0].ai?`<button class="aiblk" data-act="secsheet" data-i="0"><em>AI</em><span>${esc(n.secs[0].ai)}</span></button>`:""}`;
-    else body=n.secs.map((s,i)=>`<div class="ndiv">${chk(s,i)}<span class="nn">${i+1} ·</span><input class="ntitle" data-i="${i}" value="${esc(s.title)}" placeholder="단계" autocomplete="off"><i class="nline"></i>${wIn(s,i)}${rg(i)}<button class="nico" data-act="secsheet" data-i="${i}" aria-label="단계 메뉴">${ic("more")}</button></div><textarea class="nta" data-i="${i}" rows="1">${esc(s.memo)}</textarea>${s.ai?`<button class="aiblk" data-act="secsheet" data-i="${i}"><em>AI</em><span>${esc(s.ai)}</span></button>`:""}`).join("");
-  } else {
-    body=n.secs.map((s,i)=>`<div class="ncard" data-i="${i}"><div class="nch">${chk(s,i)}<b>${dv?`${i+1}. `:""}${esc(s.title||(dv?"단계":"메모"))}</b>${wIn(s,i)}${rg(i)}${dv?`<span class="grip" aria-label="순서 바꾸기">${ic("grip")}</span>`:""}</div><button class="open" data-act="secsheet" data-i="${i}">${s.memo.trim()?`<div class="nmemo">${esc(s.memo.trim())}</div>`:""}${s.ai?`<div class="nai">${esc(s.ai)}</div>`:""}${!s.memo.trim()&&!s.ai?`<div class="nmemo">…</div>`:""}</button></div>`).join("");
+    return head+`<div class="scroll" style="padding-bottom:30px">${infoLine()}<textarea class="nta solo" id="memo" placeholder="메모">${esc(n.memo)}</textarea></div>
+      <div class="nfoot"><div class="chips"><button class="chip" data-act="randomfill">${ic("dice")}랜덤</button><button class="chip" data-act="quickwrite">${ic("pen")}바로 쓰기</button></div>
+      <button class="btnfull" data-act="plotgo">${ic("spark")}${has?"플롯 다시 짜기":"플롯 짜기"}</button></div>`;
   }
-  const C=(act,icn,label,on)=>`<button class="chip${on?" on":""}" data-act="${act}">${ic(icn)}${label}</button>`;
-  const first=dv?C("expandall","spark","전체 펼치기",1):C("splitauto","spark","단계로 나누기",1);
-  const chips=first+(view==="memo"?C("splithere","split","여기서 나누기"):C("addsec","plus","단계"))+C("randomfill","dice","랜덤");
+  let body="";
+  if(!has) body=`<div class="empty"><b>아직 플롯이 없어요</b></div>`;
+  else {
+    const p=n.plot;
+    if(p) body+=`<div class="plotcard" role="button" tabindex="0" data-act="plotedit"><div class="tt">${esc(p.title||"제목 없음")}</div>${p.logline?`<div class="lg">${esc(p.logline)}</div>`:""}
+      ${PLOT_KV.filter(([k])=>(p[k]||"").trim()).map(([k,l])=>`<div class="kv"><span>${l}</span><span>${esc(p[k])}</span></div>`).join("")}</div>`;
+    if(p&&(p.kept||[]).length) body+=`<div class="lbl2">메모에서 가져온 것</div><div class="tags">${p.kept.map(x=>`<span class="tag">${esc(x)}</span>`).join("")}</div>`;
+    if(p&&(p.decided||[]).length) body+=`<div class="lbl2">AI가 정한 것</div><div class="tags">${p.decided.map(x=>`<span class="tag dash">${esc(x)}</span>`).join("")}</div>`;
+    body+=`<div class="lbl2" style="margin-top:22px"><span>단계 · ${n.secs.length}</span><button data-act="addsec" aria-label="단계 추가">${ic("plus")}</button></div>`;
+    body+=n.secs.map((s,i)=>`<div class="ncard" data-i="${i}"><div class="nch"><button class="nchk" data-act="chk" data-i="${i}" aria-checked="${!!s.chk}" aria-label="체크">${ic("check")}</button><b>${i+1}. ${esc(s.title||"단계")}</b><input class="nw" data-i="${i}" inputmode="numeric" value="${s.words}" aria-label="어절" autocomplete="off"><button class="nico" data-act="regen" data-i="${i}" aria-label="다시 펼치기">${ic("redo")}</button><span class="grip" aria-label="순서 바꾸기">${ic("grip")}</span></div>
+      <button class="open" data-act="secsheet" data-i="${i}">${s.scene?`<div class="nai">${esc(s.scene)}</div>`:`<div class="nmemo">…</div>`}${s.beat?`<div class="nbeat">${esc(s.beat)}</div>`:""}</button></div>`).join("");
+  }
   const ck=n.secs.filter(s=>s.chk).length;
-  const sum=dv?`<div class="nsum"><span id="nck">체크 ${ck}단계</span><span><b id="nsw">${padSum().toLocaleString()}</b> / <span id="nst">${padTotal().toLocaleString()}</span>어절</span></div>`:"";
-  const cta=`<button class="btnfull" data-act="generate" id="ncta" ${dv&&!ck?"disabled":""}>${ic("spark")}${dv?"체크한 단계 쓰기":S.mode==="app"?"Gemini 앱으로 보내기":"Gemini로 쓰기"}</button>`;
-  return head+`<div class="scroll" style="padding-bottom:30px">${infoLine()}<div class="nbody nv-${view}">${body}</div></div><div class="nfoot"><div class="chips">${chips}</div>${sum}${cta}</div>`;
+  const foot=has?`<div class="nsum" style="margin-top:0"><span id="nck">체크 ${ck}단계</span><span><b id="nsw">${padSum().toLocaleString()}</b> / <span id="nst">${padTotal().toLocaleString()}</span>어절</span></div>
+    <div class="frow"><button class="btnsq" data-act="replan" aria-label="다시 짜기">${ic("redo")}</button><button class="btnfull" data-act="generate" id="ncta" ${n.secs.length&&!ck?"disabled":""}>${ic("spark")}${n.secs.length?"체크한 단계 쓰기":S.mode==="app"?"Gemini 앱으로 보내기":"Gemini로 쓰기"}</button></div>`
+    :`<button class="btnfull" data-act="plotgo">${ic("spark")}플롯 짜기</button>`;
+  return head+`<div class="scroll" style="padding-bottom:30px">${infoLine()}<div class="nbody nv-plot">${body}</div></div><div class="nfoot">${foot}</div>`;
 }
 function bindWrite(){
   const n=pad();
-  app.querySelectorAll(".chip").forEach(c=>c.addEventListener("pointerdown",e=>e.preventDefault()));
-  app.querySelectorAll(".nta").forEach(ta=>{ const i=+ta.dataset.i; growTA(ta);
-    const mark=()=>{ lastFocus={i,pos:ta.selectionStart} };
-    ta.addEventListener("input",()=>{ n.secs[i].memo=ta.value; const sc=app.querySelector(".scroll"), y=sc.scrollTop; growTA(ta); sc.scrollTop=y; mark(); save() });
-    ["focus","click","keyup","select"].forEach(ev=>ta.addEventListener(ev,mark)); });
-  app.querySelectorAll(".ntitle").forEach(x=>x.addEventListener("input",()=>{ n.secs[+x.dataset.i].title=x.value; save() }));
+  const m=app.querySelector("#memo");
+  if(m){ growTA(m); m.addEventListener("input",()=>{ n.memo=m.value; const sc=app.querySelector(".scroll"), y=sc.scrollTop; growTA(m); sc.scrollTop=y; save() }) }
   app.querySelectorAll(".nw").forEach(x=>{ const i=+x.dataset.i;
     x.addEventListener("click",e=>e.stopPropagation());
-    x.addEventListener("input",()=>{ x.value=x.value.replace(/[^0-9]/g,"").slice(0,5); const v=+x.value; if(v>0){ if(n.divided) n.secs[i].words=v; else if(v>=WMIN&&v<=WMAX) S.words=v; save(); updFoot() } });
-    x.addEventListener("blur",()=>{ let v=+x.value||(n.divided?n.secs[i].words:S.words); v=Math.min(WMAX,Math.max(n.divided?100:WMIN,v)); if(n.divided) n.secs[i].words=v; else S.words=v; x.value=v; save(); updFoot() }); });
+    x.addEventListener("input",()=>{ x.value=x.value.replace(/[^0-9]/g,"").slice(0,5); const v=+x.value; if(v>0){ n.secs[i].words=v; save(); updFoot() } });
+    x.addEventListener("blur",()=>{ let v=+x.value||n.secs[i].words; v=Math.min(WMAX,Math.max(100,v)); n.secs[i].words=v; x.value=v; save(); updFoot() }); });
   bindDrag();
 }
 function updFoot(){
@@ -659,7 +689,7 @@ function updFoot(){
   if(q("#nck")) q("#nck").textContent=`체크 ${ck}단계`;
   if(q("#nsw")) q("#nsw").textContent=padSum().toLocaleString();
   if(q("#nst")) q("#nst").textContent=padTotal().toLocaleString();
-  const c=q("#ncta"); if(c) c.disabled=n.divided&&!ck;
+  const c=q("#ncta"); if(c) c.disabled=n.secs.length&&!ck;
   const inf=q(".ninfo"); if(inf) inf.outerHTML=infoLine();
 }
 function bindDrag(){
@@ -678,133 +708,151 @@ function bindDrag(){
 }
 function basicEditor(){
   push({title:"기본",noSave:1,rebind:true,html:()=>{
-    const t=curTpl();
-    const contOpts=S.stories.map(s=>`<option value="${s.id}" ${S.contStory===s.id?"selected":""}>${esc(s.title)}</option>`).join("");
+    const opts=S.stories.map(s=>`<option value="${s.id}" ${S.contStory===s.id?"selected":""}>${esc(s.title)}</option>`).join("");
+    const n=pad();
     return `<button class="row" data-act="pickwork"><span>원작</span><span style="display:flex;align-items:center;gap:6px;min-width:0"><span class="val">${esc(S.activeWork?workName(S.activeWork):"설정 없음")}</span>${ic("chev")}</span></button>
-    <div class="texttabs" style="margin-top:24px">${S.templates.map(x=>`<button data-act="tpl" data-id="${x.id}" aria-pressed="${x.id===t.id}">${esc(x.name)}</button>`).join("")}</div>
-    ${t.cont?`<select class="line-input" id="contStory" aria-label="이어 쓸 이야기">${contOpts?`<option value="">이어 쓸 이야기</option>${contOpts}`:`<option value="">서재에 이야기가 없어요</option>`}</select>`:""}
-    <div class="tpl" id="tpl">${tplHTML(t)}</div>
     <div class="genre"><span>장르</span><div class="sel"><select id="genre" class="${S.genre?"":"none"}" aria-label="장르">
       <option value="">선택 안 함</option>${GENRES.map(([g])=>`<option value="${g}" ${S.genre===g?"selected":""}>${g}</option>`).join("")}<option value="custom" ${S.genre==="custom"?"selected":""}>직접 작성</option>
     </select>${ic("chev")}</div></div>
     ${S.genre==="custom"?`<input class="line-input genre-custom" id="genreCustom" placeholder="질투 + 후회남주" value="${esc(S.genreCustom)}" autocomplete="off">`:""}
-    <div class="lbl">꼭 넣을 장면</div>
-    <textarea class="line-input" id="scene" rows="1" style="margin-top:2px">${esc(S.scene)}</textarea>
-    ${pad().divided?`<div class="words"><span>분량</span><b style="color:var(--ink)">${padTotal().toLocaleString()}</b><span>어절</span></div>`:`<label class="words"><span>분량</span><input id="words" type="text" inputmode="numeric" pattern="[0-9]*" value="${S.words}" aria-label="분량(어절)" autocomplete="off"><span>어절</span></label>`}`},
+    <div class="genre"><span>다음 편</span><div class="sel"><select id="contStory" class="${S.contStory?"":"none"}" aria-label="이어 쓸 이야기"><option value="">새 이야기</option>${opts}</select>${ic("chev")}</div></div>
+    <label class="words"><span>분량</span><input id="words" type="text" inputmode="numeric" pattern="[0-9]*" value="${padTotal()}" aria-label="분량(어절)" autocomplete="off"><span>어절</span></label>`},
     after:bindBasic});
 }
 function bindBasic(){
-  const t=curTpl();
-  app.querySelectorAll(".blank").forEach(el=>{
-    el.addEventListener("click",()=>{ if(document.activeElement!==el){ el.focus(); caretEnd(el) } });
-    el.addEventListener("input",()=>{ (S.drafts[t.id] ||= {})[el.dataset.k]=el.textContent.trim(); if(!el.textContent.trim()) el.textContent=""; save() });
-    el.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); const all=[...app.querySelectorAll(".blank")];const n=all[all.indexOf(el)+1];n?n.focus():app.querySelector("#scene").focus() } });
-    el.addEventListener("paste",e=>{ e.preventDefault(); document.execCommand("insertText",false,(e.clipboardData.getData("text")||"").replace(/\s+/g," ")) });
-  });
-  const sc=app.querySelector("#scene"); if(!sc) return; growTA(sc);
-  sc.addEventListener("input",()=>{ S.scene=sc.value; growTA(sc); save() });
-  app.querySelector("#genre").addEventListener("change",e=>{ S.genre=e.target.value; save(); keepScroll(render); if(S.genre==="custom") setTimeout(()=>app.querySelector("#genreCustom")?.focus(),30) });
+  const g=app.querySelector("#genre"); if(!g) return;
+  g.addEventListener("change",e=>{ S.genre=e.target.value; save(); keepScroll(render); if(S.genre==="custom") setTimeout(()=>app.querySelector("#genreCustom")?.focus(),30) });
   app.querySelector("#genreCustom")?.addEventListener("input",e=>{ S.genreCustom=e.target.value; save() });
+  app.querySelector("#contStory").addEventListener("change",e=>{ S.contStory=e.target.value||null; const st=S.stories.find(x=>x.id===S.contStory); if(st?.workId) S.activeWork=st.workId; save(); keepScroll(render) });
   const wi=app.querySelector("#words");
-  if(wi){ wi.addEventListener("input",()=>{ wi.value=wi.value.replace(/[^0-9]/g,"").slice(0,5); const n=+wi.value; if(n>=WMIN&&n<=WMAX){ S.words=n; save() } });
-    wi.addEventListener("blur",()=>{ let n=+wi.value||S.words; n=Math.min(WMAX,Math.max(WMIN,n)); S.words=n; wi.value=n; save() }); }
-  app.querySelector("#contStory")?.addEventListener("change",e=>{ S.contStory=e.target.value||null; save() });
+  wi.addEventListener("input",()=>{ wi.value=wi.value.replace(/[^0-9]/g,"").slice(0,5) });
+  wi.addEventListener("blur",()=>{ const n=pad(); let v=+wi.value||padTotal(); v=Math.min(WMAX,Math.max(WMIN,v)); S.words=v;
+    if(n.secs.length){ const tot=padTotal()||1; n.secs.forEach(s=>s.words=r100(s.words*v/tot)) } wi.value=padTotal(); save() });
 }
 function planCtx(){
-  const t=curTpl(), d=S.drafts[t.id]||{}, w=S.works.find(x=>x.id===S.activeWork);
-  let c=`[이야기 개요]\n${josa(t.body.replace(/\{\{(.+?)\}\}/g,(_,k)=>(d[k]||"").trim()||`(${k}: 미정)`))}`;
-  const g=genreText(); if(g) c+=`\n\n[장르]\n${g}`;
-  if(S.scene.trim()) c+=`\n\n[꼭 넣을 장면]\n${S.scene.trim()}`;
-  if(w&&(w.memo||"").trim()) c+=`\n\n[작품 설정: ${w.name}]\n${w.memo.trim().slice(0,6000)}`;
+  const w=S.works.find(x=>x.id===S.activeWork), prev=S.contStory?S.stories.find(x=>x.id===S.contStory):null;
+  let c="";
+  if(w&&(w.memo||"").trim()) c+=`[작품 설정: ${w.name}]\n${w.memo.trim().slice(0,6000)}\n\n`;
+  const g=genreText(); if(g) c+=`[장르]\n${g}\n\n`;
+  if(prev) c+=`[앞 이야기: ${prev.title} — 이번 이야기는 이 다음 편이야. 끝부분]\n${prev.text.slice(-3000)}\n\n`;
+  else { const past=S.stories.filter(x=>(x.workId||null)===(w?.id||null)).slice(0,15).map(x=>x.title); if(past.length) c+=`[이미 쓴 이야기 — 소재·구조가 겹치지 않게]\n${past.join(", ")}\n\n` }
   return c;
 }
-function splitHere(){
-  const n=pad(); const i=Math.min(lastFocus.i,n.secs.length-1), s=n.secs[i];
-  const ta=app.querySelector(`.nta[data-i="${i}"]`); const pos=ta&&document.activeElement===ta?ta.selectionStart:lastFocus.pos;
-  const a=s.memo.slice(0,pos).replace(/\s+$/,""), b=s.memo.slice(pos).replace(/^\s+/,"");
-  if(!a||!b){ toast("나눌 곳에 커서를 두세요",1600); return }
-  if(!n.divided){ s.words=S.words; n.divided=true }
-  const w2=r100(s.words/2), w1=Math.max(100,s.words-w2);
-  s.memo=a; s.words=w1; n.secs.splice(i+1,0,newSec({memo:b,words:w2,chk:s.chk}));
-  save(); keepScroll(render);
-  const nt=app.querySelector(`.nta[data-i="${i+1}"]`); if(nt){ nt.focus(); nt.setSelectionRange(0,0); lastFocus={i:i+1,pos:0} }
+function plotLines(p){ if(!p) return ""; return [["title","가제"],["logline","한 줄"],...PLOT_KV].filter(([k])=>(p[k]||"").trim()).map(([k,l])=>`${l}: ${p[k].trim()}`).join("\n") }
+const FID={"그대로":"메모에 적힌 사건만 쓰고 새 사건을 더하지 마. 빈 곳은 메모 사건 사이를 잇는 정도로만 채워.","살려서":"메모의 사건을 뼈대로 삼고, 이야기가 서려면 필요한 사건과 장면을 보태.","자유롭게":"메모는 출발점이야. 더 좋은 전개가 있으면 메모의 사건을 바꾸거나 빼도 돼. 다만 설정·호칭·바라는 느낌은 지켜."};
+const PLOT_SCHEMA={type:"OBJECT",properties:{title:{type:"STRING"},logline:{type:"STRING"},tone:{type:"STRING"},core:{type:"STRING"},ending:{type:"STRING"},motif:{type:"STRING"},heart:{type:"STRING"},
+  kept:{type:"ARRAY",items:{type:"STRING"}},decided:{type:"ARRAY",items:{type:"STRING"}},
+  steps:{type:"ARRAY",items:{type:"OBJECT",properties:{title:{type:"STRING"},words:{type:"INTEGER"},scene:{type:"STRING"},beat:{type:"STRING"},from:{type:"STRING"}},required:["title","words","scene","beat"]}}},
+  required:["title","logline","tone","core","ending","motif","heart","kept","decided","steps"]};
+function plotPrompt(mode,instr){
+  const n=pad(), total=padTotal(), ns=n.nsteps?`정확히 ${n.nsteps}개`:"분량에 맞게 4~7개";
+  let t=`너는 2차 창작 소설의 플롯 편집자야. 아래 [작가 메모]는 설정·전개 아이디어·원하는 분위기가 뒤섞인 낙서야. 이걸 정제된 플롯과 집필용 단계로 정리해줘.\n\n${planCtx()}[분량] 전체 약 ${total.toLocaleString()}어절\n\n[작가 메모]\n${n.memo.trim()||"(비어 있음 — 작품 설정과 장르로 자유롭게)"}\n\n`;
+  if(mode==="plot"&&n.secs.length) t+=`[지금 단계 — 이 단계는 그대로 둘 거야. 플롯만 이 단계에 맞게 다시 다듬어]\n${n.secs.map((s,i)=>`${i+1}. ${s.title}: ${s.scene}`).join("\n")}\n\n`;
+  if(mode==="steps"&&n.plot) t+=`[확정된 플롯 — 바꾸지 마. 이 플롯에 맞게 단계만 새로 짜]\n${plotLines(n.plot)}\n\n`;
+  t+=`규칙:
+1. 먼저 메모를 분류해: 인물·관계·호칭·말투 / 꼭 넣을 장면 / 전개 순서 / 원하는 톤·느낌 / 금지·주의. 메모에 적힌 건 하나도 빠뜨리지 말고 반영해. 순서가 적혀 있으면 그 순서를 지켜.
+2. 비어 있는 부분은 작품 설정과 원작의 성격·관계성을 계승해서 채우고, 그렇게 채운 것은 decided에 짧게 적어.
+3. 플롯 설계
+- 중심 사건 하나와, 그 사건이 인물을 실제로 어떻게 바꾸는지(결말선)를 먼저 정해.
+- 주연 중 한 명에게 질투·불안·오해·후회 중 하나로 속을 태우는 마음고생 라인을 줘(heart).
+- 소품이나 모티프 하나로 처음과 끝을 묶어(motif).
+- 각 단계는 직전 단계와 무대·온도·감정 방향 중 최소 하나가 달라야 해. 같은 감정 비트를 반복하지 마.
+4. 단계는 ${ns}. 단계별 words의 합은 ${total}.
+- title: 2~8자
+- scene: 그 단계에서 실제로 일어나는 사건 2~3문장. 인물 이름을 쓰고, 앞뒤 단계와 인과로 이어지게.
+- beat: 감정 변화 "A → B" 형식으로 짧게
+- from: 이 단계가 반영한 메모 구절을 짧게(없으면 빈 문자열)
+5. 메모 충실도: ${FID[n.fid]||FID["살려서"]}
+6. kept: 메모에서 가져온 핵심(호칭·말투·필수 장면·바라는 느낌 등)을 각각 15자 안팎으로.
+7. title은 가제, logline은 한 문장, tone·core·ending·motif·heart는 각각 한 문장.`;
+  if(instr) t+=`\n\n[추가 지시]\n${instr}`;
+  return t;
 }
-async function autoSplit(b){
-  if(noteBusy) return; const n=pad(); const text=n.secs.map(s=>s.memo).join("\n\n").trim();
-  if(!text){ app.querySelector(".nta")?.focus(); return }
-  const total=n.divided?padTotal():S.words; let parts=null;
-  const arrows=text.split(/\s*(?:→|->|⇒)\s*/).map(x=>x.trim()).filter(Boolean);
-  if(arrows.length>=2&&arrows.every(x=>x.length<=60)) parts=arrows.map(x=>x.length<=14?{title:x,memo:""}:{title:"",memo:x});
-  else {
-    let units=text.split(/\n+/).map(x=>x.trim()).filter(Boolean);
-    if(units.length<2) units=text.split(/(?<=[.!?。…])\s+/).map(x=>x.trim()).filter(Boolean);
-    if(units.length<2){ toast("나눌 내용이 더 필요해요",1600); return }
-    if(S.apiKey&&S.model){
-      noteBusy=true; busy(b,true);
-      try{
-        const o=await aiJSON(`소설 메모를 이야기 전개 단계로 나눠줘.\n\n${planCtx()}\n\n[메모 — 앞의 번호는 문단 번호]\n${units.map((u,i)=>`[${i}] ${u}`).join("\n")}\n\n규칙:\n- 문단을 쪼개거나 순서를 바꾸지 말고, 이어진 문단을 묶어 3~7단계로 나눠. 문단이 7개 이하면 문단 하나가 한 단계여도 돼.\n- start는 그 단계가 시작하는 문단 번호. 첫 단계는 0.\n- title은 그 단계를 요약하는 2~8자 짧은 이름.`,
-          {type:"OBJECT",properties:{steps:ARR({title:{type:"STRING"},start:{type:"INTEGER"}},["title","start"])},required:["steps"]},{temp:0.4});
-        const st=(o.steps||[]).map(x=>({title:String(x.title||"").trim(),start:+x.start})).filter(x=>Number.isInteger(x.start));
-        if(st.length&&st[0].start===0&&st.every((x,j)=>j===0||x.start>st[j-1].start)&&st[st.length-1].start<units.length)
-          parts=st.map((x,j)=>({title:x.title.slice(0,20),memo:units.slice(x.start,j+1<st.length?st[j+1].start:units.length).join("\n")}));
-      }catch(e){ if(e.silent) return } finally{ noteBusy=false; busy(b,false) }
-    }
-    if(!parts){ if(units.length<=7) parts=units.map(u=>({title:"",memo:u}));
-      else { const k=5, per=Math.ceil(units.length/k); parts=[]; for(let j=0;j<units.length;j+=per) parts.push({title:"",memo:units.slice(j,j+per).join("\n")}) } }
-  }
-  const per=r100(total/parts.length);
-  n.secs=parts.map(p=>newSec({title:p.title,memo:p.memo,words:per})); n.divided=true;
-  save(); keepScroll(render); toast(`${parts.length}단계로 나눴어요`,1400);
-}
-async function expandAll(b){
-  if(noteBusy) return; const n=pad(); if(!n.divided) return autoSplit(b);
-  noteBusy=true; busy(b,true);
+async function plotGen(mode,instr,b){
+  if(noteBusy) return false; const n=pad();
+  if(!n.memo.trim()&&!S.activeWork){ S.noteView="memo"; render(); app.querySelector("#memo")?.focus(); toast("메모를 적어주세요",1400); return false }
+  noteBusy=true; busy(b,true,"플롯 짜는 중…");
   try{
-    const o=await aiJSON(`2차 창작 소설의 전개 단계를 구체적인 장면으로 펼쳐줘.\n\n${planCtx()}\n\n[분량] 전체 약 ${padTotal().toLocaleString()}어절\n\n[단계 — 작가의 메모]\n${n.secs.map((s,i)=>`${i+1}. ${s.title||"(이름 없음)"}${s.memo.trim()?`: ${s.memo.trim()}`:""}`).join("\n")}\n\n규칙:\n- 단계 수(${n.secs.length})와 순서를 그대로 지켜.\n- detail은 그 단계에서 실제로 일어나는 구체적인 사건 1~2문장. 메모의 의도를 살리고 인물 이름을 써. 앞뒤 단계와 인과로 이어지게.\n- title은 2~8자. 이미 이름이 있으면 그대로.\n- 꼭 넣을 장면이 있으면 가장 어울리는 단계에 넣어.`,
-      {type:"OBJECT",properties:{steps:ARR({title:{type:"STRING"},detail:{type:"STRING"}},["title","detail"])},required:["steps"]});
-    const st=o.steps||[]; if(!st.length) throw new Error("펼치지 못했어요. 다시 눌러주세요.");
-    n.secs.forEach((s,i)=>{ const x=st[i]; if(!x) return; s.ai=String(x.detail||"").trim(); if(!s.title.trim()) s.title=String(x.title||"").trim().slice(0,20) });
-    save(); keepScroll(render);
-  }catch(e){ errToast(e) } finally{ noteBusy=false; busy(b,false) }
+    const o=await aiJSON(plotPrompt(mode,instr),PLOT_SCHEMA,{temp:Math.max(0.9,S.temperature)});
+    const clean=v=>String(v||"").trim();
+    if(mode!=="steps"||!n.plot){ n.plot={}; ["title","logline",...PLOT_KV.map(x=>x[0])].forEach(k=>n.plot[k]=clean(o[k])); n.plot.kept=(o.kept||[]).map(clean).filter(Boolean).slice(0,10); n.plot.decided=(o.decided||[]).map(clean).filter(Boolean).slice(0,8) }
+    if(mode!=="plot"||!n.secs.length){
+      const st=(o.steps||[]).map(x=>({title:clean(x.title).slice(0,20),words:+x.words||0,scene:clean(x.scene),beat:clean(x.beat),from:clean(x.from)})).filter(x=>x.title||x.scene).slice(0,12);
+      if(!st.length) throw new Error("단계를 만들지 못했어요. 다시 시도해주세요.");
+      const total=padTotal(), sum=st.reduce((a,x)=>a+x.words,0);
+      n.secs=st.map(x=>newSec({...x,words:r100(sum>0?x.words*total/sum:total/st.length)}));
+    }
+    S.noteView="plot"; save(); render(); return true;
+  }catch(e){ errToast(e); return false } finally{ noteBusy=false; busy(b,false,"x") }
 }
 async function regenSec(i,instr,b){
   const n=pad(), s=n.secs[i]; if(!s) return false;
   busy(b,true);
   try{
-    const list=n.secs.map((x,j)=>`${j+1}. ${x.title||"(이름 없음)"}${x.memo.trim()?` — 메모: ${x.memo.trim()}`:""}${x.ai?` — 장면: ${x.ai}`:""}`).join("\n");
-    const o=await aiJSON(`2차 창작 소설의 전개 중 ${i+1}단계 하나만 다시 구체화해줘.\n\n${planCtx()}\n\n[전체 단계]\n${list}\n\n[다시 쓸 단계] ${i+1}. ${s.title||"(이름 없음)"}${s.memo.trim()?`\n작가의 메모: ${s.memo.trim()}`:""}${s.ai?`\n지금 장면: ${s.ai}`:""}${instr?`\n\n[지시]\n${instr}`:""}\n\n규칙: detail은 이 단계에서 실제로 일어나는 구체적인 사건 1~2문장. 작가의 메모를 살리되 지금 장면과는 다르게, 앞뒤 단계와 인과로 이어지게. title은 2~8자.`,
-      {type:"OBJECT",properties:{title:{type:"STRING"},detail:{type:"STRING"}},required:["title","detail"]});
-    if(o.detail) s.ai=String(o.detail).trim(); if(!s.title.trim()&&o.title) s.title=String(o.title).trim().slice(0,20); save();
+    const list=n.secs.map((x,j)=>`${j+1}. ${x.title||"(이름 없음)"}: ${x.scene}${x.beat?` (${x.beat})`:""}`).join("\n");
+    const o=await aiJSON(`2차 창작 소설의 단계 중 ${i+1}단계 하나만 다시 구체화해줘.\n\n${planCtx()}${n.plot?`[플롯]\n${plotLines(n.plot)}\n\n`:""}[작가 메모]\n${n.memo.trim()}\n\n[전체 단계]\n${list}\n\n[다시 쓸 단계] ${i+1}. ${s.title||"(이름 없음)"} — 지금 장면: ${s.scene||"(없음)"}${instr?`\n\n[지시]\n${instr}`:""}\n\n규칙: scene은 이 단계에서 실제로 일어나는 사건 2~3문장. 지금 장면과는 다르게, 앞뒤 단계와 인과로 이어지게. 직전 단계와 무대·온도·감정 방향 중 하나는 달라야 해. beat는 "A → B". title은 2~8자.`,
+      {type:"OBJECT",properties:{title:{type:"STRING"},scene:{type:"STRING"},beat:{type:"STRING"}},required:["title","scene","beat"]});
+    if(o.scene) s.scene=String(o.scene).trim(); if(o.beat) s.beat=String(o.beat).trim(); if(!s.title.trim()&&o.title) s.title=String(o.title).trim().slice(0,20); save();
     if(!document.querySelector(".scrim")) keepScroll(render);
     return true;
   }catch(e){ errToast(e); return false } finally{ busy(b,false) }
 }
+function replanSheet(){
+  const n=pad(); let mode="all";
+  const sh=sheet(`<div id="rpB"></div>`,async(e,close)=>{
+    const b=e.target.closest("button"); if(!b||b.disabled) return; const d=b.dataset;
+    if(d.x==="close"){ close(); return }
+    if(d.fid){ n.fid=d.fid; save(); draw() }
+    if(d.ns!=null){ n.nsteps=+d.ns; save(); draw() }
+    if(d.md){ mode=mode===d.md?"all":d.md; draw() }
+    if(d.x==="go"){ if(await plotGen(mode,sh.querySelector("#rpI").value.trim(),b)) close() }
+  });
+  const draw=()=>{ const v=sh.querySelector("#rpI")?.value||"";
+    sh.querySelector("#rpB").innerHTML=`<div class="shh"><b>다시 짜기</b><button class="x" data-x="close" aria-label="닫기">${ic("x")}</button></div>
+    <div class="shl">메모를</div><div class="segbox">${Object.keys(FID).map(k=>`<button data-fid="${k}" aria-pressed="${n.fid===k}">${k}</button>`).join("")}</div>
+    <div class="shl">단계</div><div class="segbox">${[0,4,5,6,7].map(k=>`<button data-ns="${k}" aria-pressed="${(n.nsteps||0)===k}">${k||"알아서"}</button>`).join("")}</div>
+    <div class="askrow"><input id="rpI" placeholder="지시" autocomplete="off"></div>
+    <div class="chips" style="margin-top:12px"><button class="chip ${mode==="plot"?"on":""}" data-md="plot" ${n.secs.length?"":"disabled"}>플롯만 다시</button><button class="chip ${mode==="steps"?"on":""}" data-md="steps" ${n.plot?"":"disabled"}>단계만 다시</button></div>
+    <button class="btnfull" data-x="go" style="margin-top:14px">${ic("redo")}다시 짜기</button>`;
+    const i=sh.querySelector("#rpI"); i.value=v; i.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); sh.querySelector('[data-x="go"]').click() } }) };
+  draw();
+}
+function plotSheet(){
+  const n=pad(), p=n.plot; if(!p) return;
+  const sh=sheet(`<div class="shh"><b>플롯</b><button class="x" data-x="close" aria-label="닫기">${ic("x")}</button></div>
+    <input class="shin" id="pT" value="${esc(p.title||"")}" placeholder="가제" autocomplete="off">
+    <div class="shl">한 줄</div><textarea class="shta" data-k="logline" rows="1">${esc(p.logline||"")}</textarea>
+    ${PLOT_KV.map(([k,l])=>`<div class="shl">${l}</div><textarea class="shta" data-k="${k}" rows="1">${esc(p[k]||"")}</textarea>`).join("")}`,
+    (e,close)=>{ if(e.target.closest('[data-x="close"]')) close() },()=>{ save(); keepScroll(render) });
+  sh.querySelector("#pT").addEventListener("input",e=>{ p.title=e.target.value; save() });
+  sh.querySelectorAll("textarea[data-k]").forEach(t=>{ growTA(t); t.addEventListener("input",()=>{ p[t.dataset.k]=t.value; growTA(t); save() }) });
+}
 function secSheet(i){
-  const n=pad(), s=n.secs[i]; if(!s) return; const dv=n.divided;
-  const sh=sheet(`<div class="shh"><b>${dv?`${i+1}단계`:"메모"}</b><button class="x" data-x="close" aria-label="닫기">${ic("x")}</button></div>
-    ${dv?`<input class="shin" id="ssT" value="${esc(s.title)}" placeholder="단계 이름" autocomplete="off">`:""}
-    <div class="shl">내 메모</div><textarea class="shta" id="ssM" rows="1">${esc(s.memo)}</textarea>
-    <div class="shl">AI 장면</div><textarea class="shta" id="ssA" rows="1">${esc(s.ai)}</textarea>
+  const n=pad(), s=n.secs[i]; if(!s) return;
+  const sh=sheet(`<div class="shh"><b>${i+1}단계</b><button class="x" data-x="close" aria-label="닫기">${ic("x")}</button></div>
+    <input class="shin" id="ssT" value="${esc(s.title)}" placeholder="단계 이름" autocomplete="off">
+    <div class="shl">장면</div><textarea class="shta" id="ssS" rows="1">${esc(s.scene)}</textarea>
+    <div class="shl">감정</div><input class="shta" id="ssB" value="${esc(s.beat)}" autocomplete="off">
+    ${s.from?`<div class="shl">메모</div><div class="sfrom">${esc(s.from)}</div>`:""}
     <div class="askrow"><input id="ssI" placeholder="지시" autocomplete="off"><button data-x="ask" aria-label="다시 펼치기">${ic("send")}</button></div>
-    <div class="chips wrap" style="margin-top:14px"><button class="chip" data-x="regen">${ic("redo")}다시 펼치기</button><button class="chip" data-x="clear">AI 장면 지우기</button>${dv&&i>0?`<button class="chip" data-x="merge">위 단계와 합치기</button>`:""}${dv?`<button class="chip" data-x="del" style="color:var(--danger)">삭제</button>`:""}</div>
-    <label class="words" style="margin-top:20px"><span>분량</span><input id="ssW" inputmode="numeric" value="${dv?s.words:S.words}" autocomplete="off"><span>어절</span></label>`,
+    <div class="chips wrap" style="margin-top:14px"><button class="chip" data-x="regen">${ic("redo")}다시 펼치기</button>${i>0?`<button class="chip" data-x="merge">위 단계와 합치기</button>`:""}<button class="chip" data-x="del" style="color:var(--danger)">삭제</button></div>
+    <label class="words" style="margin-top:20px"><span>분량</span><input id="ssW" inputmode="numeric" value="${s.words}" autocomplete="off"><span>어절</span></label>`,
     async(e,close)=>{
       const b=e.target.closest("[data-x]"); if(!b||b.disabled) return; const x=b.dataset.x;
       if(x==="close") close();
-      if(x==="ask"||x==="regen"){ const ins=x==="ask"?sh.querySelector("#ssI").value.trim():""; if(x==="ask"&&!ins) return; if(await regenSec(i,ins,b)){ const a=sh.querySelector("#ssA"); a.value=s.ai; growTA(a); if(x==="ask") sh.querySelector("#ssI").value="" } }
-      if(x==="clear"){ s.ai=""; const a=sh.querySelector("#ssA"); a.value=""; growTA(a); save() }
-      if(x==="merge"){ const p=n.secs[i-1]; p.memo=[p.memo.trim(),s.memo.trim()].filter(Boolean).join("\n"); p.ai=[p.ai,s.ai].filter(Boolean).join(" "); p.words=(+p.words||0)+(+s.words||0); n.secs.splice(i,1); if(n.secs.length===1){ n.divided=false; S.words=Math.min(WMAX,Math.max(WMIN,n.secs[0].words)) } save(); close() }
-      if(x==="del"){ if(b.dataset.armed!=="1"){ b.dataset.armed="1"; b.textContent="한 번 더 누르면 삭제"; return }
-        n.secs.splice(i,1); if(n.secs.length===1){ n.divided=false; S.words=Math.min(WMAX,Math.max(WMIN,n.secs[0].words)) } save(); close() }
+      if(x==="ask"||x==="regen"){ const ins=x==="ask"?sh.querySelector("#ssI").value.trim():""; if(x==="ask"&&!ins) return;
+        if(await regenSec(i,ins,b)){ const a=sh.querySelector("#ssS"); a.value=s.scene; growTA(a); sh.querySelector("#ssB").value=s.beat; if(x==="ask") sh.querySelector("#ssI").value="" } }
+      if(x==="merge"){ const p=n.secs[i-1]; p.scene=[p.scene,s.scene].filter(Boolean).join(" "); p.beat=[p.beat,s.beat].filter(Boolean).join(" / "); p.words=(+p.words||0)+(+s.words||0); n.secs.splice(i,1); save(); close() }
+      if(x==="del"){ if(b.dataset.armed!=="1"){ b.dataset.armed="1"; b.textContent="한 번 더 누르면 삭제"; return } n.secs.splice(i,1); save(); close() }
     },()=>{ save(); keepScroll(render) });
-  const t=sh.querySelector("#ssT"), m=sh.querySelector("#ssM"), a=sh.querySelector("#ssA"), w=sh.querySelector("#ssW");
-  [m,a].forEach(growTA);
-  t?.addEventListener("input",()=>{ s.title=t.value; save() });
-  m.addEventListener("input",()=>{ s.memo=m.value; growTA(m); save() });
-  a.addEventListener("input",()=>{ s.ai=a.value; growTA(a); save() });
+  const t=sh.querySelector("#ssT"), sc=sh.querySelector("#ssS"), bt=sh.querySelector("#ssB"), w=sh.querySelector("#ssW");
+  growTA(sc);
+  t.addEventListener("input",()=>{ s.title=t.value; save() });
+  sc.addEventListener("input",()=>{ s.scene=sc.value; growTA(sc); save() });
+  bt.addEventListener("input",()=>{ s.beat=bt.value; save() });
   sh.querySelector("#ssI").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); sh.querySelector('[data-x="ask"]').click() } });
   w.addEventListener("input",()=>{ w.value=w.value.replace(/[^0-9]/g,"").slice(0,5) });
-  w.addEventListener("change",()=>{ let v=+w.value||0; if(dv){ v=Math.min(WMAX,Math.max(100,v||s.words)); s.words=v } else { v=Math.min(WMAX,Math.max(WMIN,v||S.words)); S.words=v } w.value=v; save() });
+  w.addEventListener("change",()=>{ let v=Math.min(WMAX,Math.max(100,+w.value||s.words)); s.words=v; w.value=v; save() });
 }
 
 function keepScroll(fn){ const y=app.querySelector(".scroll")?.scrollTop||0; fn(); const sc=app.querySelector(".scroll"); if(sc) sc.scrollTop=y }
@@ -820,7 +868,6 @@ function vSetbook(){
     <div class="cap">모든 이야기에 공통</div>
     <button class="row" data-act="editbase"><span>기본 프롬프트</span>${ic("chev")}</button>
     <button class="row" data-act="editfanfic"><span>2차 창작 지침</span><span style="display:flex;align-items:center;gap:8px"><span class="val">${(S.fanficPrompt||"").trim()?"켜짐":"꺼짐"}</span>${ic("chev")}</span></button>
-    <button class="row" data-act="tpllist"><span>템플릿</span><span style="display:flex;align-items:center;gap:6px"><span class="val">${S.templates.length}개</span>${ic("chev")}</span></button>
   </div>`;
 }
 const MEMO_PH="원작: 푸른 등대 (원작 4권 이후 시점)\n주연: 서하윤, 한도겸\n서하윤 — 등대지기 견습생. 말수가 적고 계산적.\n한도겸 — 표류해 온 기상학자. 능청스럽고 다정함.\n호칭: 하윤 → 도겸 \"선배\" / 도겸 → 하윤 \"서하윤\"\n말투: 둘 다 반말.\n배경: 1990년대 남해의 작은 섬.\n금지: 원작에서 죽은 인물 등장 금지.";
@@ -882,12 +929,13 @@ const ACT={
   noteview(d){ S.noteView=d.k; save(); render() },
   basic(){ basicEditor() },
   chk(d,b){ const s=pad().secs[+d.i]; if(!s) return; s.chk=!s.chk; b.setAttribute("aria-checked",s.chk); save(); updFoot() },
-  splitauto(d,b){ autoSplit(b) },
-  splithere(){ splitHere() },
-  expandall(d,b){ expandAll(b) },
+  plotgo(d,b){ plotGen("all","",b) },
+  replan(){ replanSheet() },
+  plotedit(){ plotSheet() },
+  quickwrite(){ startNew(true) },
   regen(d,b){ regenSec(+d.i,"",b) },
   secsheet(d){ secSheet(+d.i) },
-  addsec(){ const n=pad(); if(!n.divided){ n.divided=true; n.secs[0].words=S.words } n.secs.push(newSec({words:1000})); save(); keepScroll(render); secSheet(n.secs.length-1) },
+  addsec(){ const n=pad(); n.secs.push(newSec({words:1000})); save(); keepScroll(render); secSheet(n.secs.length-1) },
   randomfill(d,b){
     const sh=sheet(`<div style="font-weight:700;font-size:17px;margin-bottom:6px">랜덤</div>
       <label for="rkw" style="display:block;font-size:13px;font-weight:700;color:var(--ink2);margin-top:18px">키워드</label><textarea id="rkw" rows="1" class="line-input" style="margin-top:4px" placeholder="예: 비 오는 버스 정류장, 잃어버린 반지, 첫눈">${esc(S.randKw)}</textarea>
@@ -902,7 +950,7 @@ const ACT={
   wkmore(d){ libMore[d.k]=true; const y=app.querySelector(".scroll")?.scrollTop||0; render(); const sc=app.querySelector(".scroll"); if(sc) sc.scrollTop=y },
   resetwrite(d,b){
     if(b.dataset.armed!=="1"){ b.dataset.armed="1"; b.textContent="한 번 더 누르면 비워져요"; clearTimeout(b._t); b._t=setTimeout(()=>{ if(b.isConnected){ b.dataset.armed=""; b.textContent="초기화" } },2500); return }
-    S.drafts[curTpl().id]={}; S.scene=""; S.genre=""; S.genreCustom=""; S.plotMemo=""; S.plotSteps=[]; S.splitWrite=null; S.note=null; S.noteView="memo"; save(); render(); toast("입력한 내용을 비웠어요",1400) },
+    S.drafts[curTpl().id]={}; S.scene=""; S.genre=""; S.genreCustom=""; S.plotMemo=""; S.plotSteps=[]; S.splitWrite=null; S.note=null; S.noteView="memo"; S.contStory=null; save(); render(); toast("입력한 내용을 비웠어요",1400) },
   pickwork(){
     const opts=[[null,"설정 없음"],...S.works.map(w=>[w.id,w.name])];
     sheet(opts.map(([id,n])=>`<button class="opt" data-id="${id??""}" aria-checked="${(S.activeWork||"")===(id||"")}">${esc(n)}${(S.activeWork||"")===(id||"")?ic("chev",0).replace(P.chev,'<path d="M5 12l5 5L20 7"/>'):""}</button>`).join("")+`<button class="opt" data-new="1" style="color:var(--ink3)">작품 추가</button>`,
@@ -1013,79 +1061,77 @@ function buildSys(workId,withFanfic){
 }
 function planSteps(){
   const n=pad();
-  if(!n.divided){ const s=n.secs[0]; return [{num:1,k:s.title.trim(),memo:s.memo.trim(),d:(s.ai||"").trim(),w:S.words,chk:true}] }
-  return n.secs.map((s,i)=>({num:i+1,k:s.title.trim()||`단계 ${i+1}`,memo:s.memo.trim(),d:(s.ai||"").trim(),w:+s.words||0,chk:!!s.chk}));
+  if(!n.secs.length) return [{num:1,k:"",memo:"",d:"",beat:"",w:S.words,chk:true}];
+  return n.secs.map((s,i)=>({num:i+1,k:(s.title||"").trim()||`단계 ${i+1}`,memo:"",d:(s.scene||"").trim(),beat:(s.beat||"").trim(),w:+s.words||0,chk:!!s.chk}));
 }
-function stepLines(steps,status){ return steps.map(x=>`${x.num}. ${x.k} (약 ${x.w.toLocaleString()}어절)${status?status(x):""}${x.d?`\n   장면: ${x.d}`:""}${x.memo?`\n   메모: ${x.memo}`:""}`).join("\n") }
+function stepLines(steps,status){ return steps.map(x=>`${x.num}. ${x.k} (약 ${x.w.toLocaleString()}어절)${status?status(x):""}${x.d?`\n   장면: ${x.d}`:""}${x.beat?`\n   감정: ${x.beat}`:""}${x.memo?`\n   메모: ${x.memo}`:""}`).join("\n") }
 const MARK_RULE=n=>`각 단계는 "## 번호. 단계 이름" 한 줄로 시작해. (예: "## ${n}. …")`;
-function storyMeta(steps){
-  const t=curTpl(), d=S.drafts[t.id]||{};
-  const keys=[...t.body.matchAll(/\{\{(.+?)\}\}/g)].map(m=>m[1]);
-  const filledN=keys.filter(k=>(d[k]||"").trim()).length;
-  let sum="";
-  if(filledN>=Math.ceil(keys.length/2)){
-    sum=josa(t.body.replace(/\{\{(.+?)\}\}/g,(_,k)=>(d[k]||"").trim()).replace(/[ \t]+/g," "));
-    sum=(sum.split(/(?<=[.!?])\s/)[0]||"").replace(/\s*이야기\.?$/,"").replace(/[.\s,]+$/,"").replace(/\s{2,}/g," ").trim();
-  }
-  const genre=S.genre==="custom"?(S.genreCustom||"").trim():S.genre;
-  const f=(steps||[]).find(x=>x.d||x.memo);
-  return {summary:sum||f?.d||f?.memo||S.scene.trim(),genre,scene:S.scene.trim()};
+function storyMeta(){
+  const n=pad(), genre=S.genre==="custom"?(S.genreCustom||"").trim():S.genre;
+  return {summary:n.plot?.logline||n.secs[0]?.scene||(n.memo.trim().split("\n")[0]||""),genre,scene:""};
 }
-function buildPrompt(){
-  const t=curTpl(), d=S.drafts[t.id]||{}, n=pad();
-  const missing=[...t.body.matchAll(/\{\{(.+?)\}\}/g)].map(m=>m[1]).filter(k=>!(d[k]||"").trim());
-  const filled=t.body.replace(/\{\{(.+?)\}\}/g,(_,k)=>(d[k]||"").trim()||`(${k}: 자유롭게)`);
-  const w=S.works.find(x=>x.id===S.activeWork);
-  const sys=buildSys(w?.id,!t.cont);
-  let user=`[요청]\n${filled}`;
-  if(!t.cont&&(S.fanficPrompt||"").trim()){
-    const past=S.stories.filter(x=>(x.workId||null)===(w?.id||null)).slice(0,20).map(x=>"- "+x.title);
-    if(past.length) user+=`\n\n[이전 작품 — 소재·구조가 겹치지 않게]\n${past.join("\n")}`;
+function sizeText(chunks,write,ending,split,oneShot,target,single){
+  if(single){
+    if(oneShot||target<=CHUNK) return "";
+    return `\n분량이 길어서 여러 번에 나눠 이어 쓰게 될 거야. 이번 응답에서는 쓸 수 있는 만큼 최대한 길게 쓰고, 요약하거나 서둘러 결말로 가지 마. 목표 분량에 아직 한참 못 미쳤다면 결말을 쓰지 말고 장면이 이어지는 곳에서 멈춰도 돼.`;
   }
-  const gtx=genreText(); if(gtx) user+=`\n\n[장르]\n${gtx}`;
-  const steps=planSteps(), single=!n.divided, write=single?steps:steps.filter(x=>x.chk);
+  if(split) return `\n\n분량이 길어서 약 ${CHUNK.toLocaleString()}어절씩 ${chunks.length}번에 나눠 이어 쓸 거야. 한 번에 쓸 수 있는 만큼 충분히 길게 쓰되 요약하지 마.\n`+chunkText(chunks[0],write,0,chunks.length,ending);
+  return "\n"+chunkText(chunks[0],write,0,1,ending)+(oneShot?" 한 번에 끝까지 다 써줘. 중간에 끊거나 요약하지 마.":"");
+}
+function buildPrompt(opt){
+  opt=opt||{}; const n=pad(), oneShot=!!opt.oneShot, raw=!!opt.raw;
+  const w=S.works.find(x=>x.id===S.activeWork);
+  const sys=buildSys(w?.id,true);
+  const prev=S.contStory?S.stories.find(s=>s.id===S.contStory):null;
+  if(S.contStory&&!prev){ S.contStory=null; save() }
+  let user="";
+  if(prev){ const body=prev.text.length>24000?"…(앞부분 생략)…\n"+prev.text.slice(-24000):prev.text;
+    user+=`[앞 이야기: ${prev.title}]\n${body}\n\n이번 이야기는 이 이야기에 바로 이어지는 다음 편이야.\n\n` }
+  if(n.plot&&!raw) user+=`[플롯 — 이 방향을 끝까지 지켜]\n${plotLines(n.plot)}\n\n`;
+  if(n.memo.trim()) user+=`[작가 메모 — 설정과 바라는 느낌. 반드시 반영]\n${n.memo.trim()}\n\n`;
+  if(!prev&&(S.fanficPrompt||"").trim()){
+    const past=S.stories.filter(x=>(x.workId||null)===(w?.id||null)).slice(0,20).map(x=>"- "+x.title);
+    if(past.length) user+=`[이전 작품 — 소재·구조가 겹치지 않게]\n${past.join("\n")}\n\n`;
+  }
+  const gtx=genreText(); if(gtx) user+=`[장르]\n${gtx}\n\n`;
+  const steps=raw?[{num:1,k:"",memo:"",d:"",beat:"",w:S.words,chk:true}]:planSteps(), single=raw||!n.secs.length, write=single?steps:steps.filter(x=>x.chk);
   const target=write.reduce((a,x)=>a+x.w,0), ending=write.some(x=>x.num===steps.length);
   let chunks=null, split=false;
-  if(single){
-    const s=steps[0];
-    if(s.memo) user+=`\n\n[전개 메모]\n${s.memo}\n이 메모의 흐름을 순서대로 지키되, 각 내용을 구체적인 사건과 감정선으로 풀어서 써.`;
-    if(s.d) user+=`\n\n[장면]\n${s.d}`;
-  } else {
-    user+=`\n\n[전개] 전체 ${steps.length}단계. 순서와 사건을 반드시 지키고, 사이 장면과 감정선은 자유롭게 채워.\n`+stepLines(steps);
-    if(write.length) { chunks=planChunks(write); split=chunks.length>1 }
+  if(single){ if(n.memo.trim()) user+=`메모의 흐름을 순서대로 지키되, 각 내용을 구체적인 사건과 감정선으로 풀어서 써.\n\n` }
+  else {
+    user+=`[전개] 전체 ${steps.length}단계. 순서와 사건을 반드시 지키고, 사이 장면과 감정선은 자유롭게 채워.\n`+stepLines(steps);
+    if(write.length){ chunks=oneShot?[{s:0,e:write.length-1,w:target,sp:false,ep:false}]:planChunks(write); split=chunks.length>1 }
     if(write.length&&write.length<steps.length) user+=`\n\n[이번에 쓸 단계]\n${write.map(x=>x.num).join("·")}단계만 써. 다른 단계는 이번에 쓰지 마.`;
     if(write.length) user+=`\n\n[단계 표시]\n${MARK_RULE(write[0].num)}`;
+    user+="\n\n";
   }
-  if(S.scene.trim()) user+=`\n\n[꼭 넣을 장면]\n${S.scene.trim()}`;
-  user+=`\n\n[분량]\n본문 ${target.toLocaleString()}어절 이상(어절 = 띄어쓰기로 나뉜 단어 하나). 이 분량은 하한이니 모자라게 쓰지 마.`;
-  if(chunks) user+=split?`\n\n분량이 길어서 약 ${CHUNK.toLocaleString()}어절씩 ${chunks.length}번에 나눠 이어 쓸 거야. 한 번에 쓸 수 있는 만큼 충분히 길게 쓰되 요약하지 마.\n`+chunkText(chunks[0],write,0,chunks.length,ending):"\n"+chunkText(chunks[0],write,0,1,ending);
-  else if(target>CHUNK) user+=`\n분량이 길어서 여러 번에 나눠 이어 쓰게 될 거야. 이번 응답에서는 쓸 수 있는 만큼 최대한 길게 쓰고, 요약하거나 서둘러 결말로 가지 마. 목표 분량에 아직 한참 못 미쳤다면 결말을 쓰지 말고 장면이 이어지는 곳에서 멈춰도 돼.`;
-  let prev=null;
-  if(t.cont){
-    prev=S.stories.find(s=>s.id===S.contStory);
-    if(!prev) return {error:"이어 쓸 이야기를 골라주세요"};
-    const body=prev.text.length>24000?"…(앞부분 생략)…\n"+prev.text.slice(-24000):prev.text;
-    user=`[앞 이야기: ${prev.title}]\n${body}\n\n`+user+"\n\n제목은 앞 이야기와 이어지는 회차 제목으로 지어줘.";
-  }
+  user+=`[분량]\n본문 ${target.toLocaleString()}어절 이상(어절 = 띄어쓰기로 나뉜 단어 하나). 이 분량은 하한이니 모자라게 쓰지 마.`;
+  user+=sizeText(chunks,write,ending,split,oneShot,target,single);
+  if(n.plot?.title&&!raw) user+=`\n\n제목은 가제 '${n.plot.title}'를 쓰거나, 더 어울리는 제목으로 지어줘.`;
+  else if(prev) user+="\n\n제목은 앞 이야기와 이어지는 회차 제목으로 지어줘.";
+  if(!n.memo.trim()&&!n.plot&&!n.secs.length&&!prev) return {error:"메모를 적어주세요"};
   const setup=sys+SETUP_TAIL, request=user+REQUEST_TAIL;
-  return {setup,request,h:hashStr(setup),missing,steps,write,chunks,split,target,ending,single,workId:w?.id||null,tplName:t.name,prevId:prev?.id||null,meta:storyMeta(steps)};
+  return {setup,request,h:hashStr(setup),steps,write,chunks,split,target,ending,single,workId:w?.id||null,tplName:"",prevId:prev?.id||null,meta:storyMeta(),outline:n.plot&&!raw?{...n.plot}:null,memo:n.memo.trim()};
 }
 function moreRem(x){ return x.have>=x.w*0.9?Math.max(300,r100(x.w*0.25)):r100(x.w-x.have) }
-function buildMore(s,idxs){
+function buildMore(s,idxs,oneShot){
   const secs=ensureSecs(s);
-  const steps=secs.map((x,i)=>({num:i+1,k:(x.title||"").trim()||`단계 ${i+1}`,memo:(x.memo||"").trim(),d:(x.ai||"").trim(),w:+x.words||0,have:wc(x.text)}));
+  const steps=secs.map((x,i)=>({num:i+1,k:(x.title||"").trim()||`단계 ${i+1}`,memo:(x.memo||"").trim(),d:(x.ai||"").trim(),beat:(x.beat||"").trim(),w:+x.words||0,have:wc(x.text)}));
   const write=idxs.map(i=>({...steps[i],w:moreRem(steps[i])}));
   const target=write.reduce((a,x)=>a+x.w,0), ending=write.some(x=>x.num===steps.length);
   const setup=buildSys(s.workId,true)+SETUP_TAIL;
   const body=s.text.length>24000?"…(앞부분 생략)…\n"+s.text.slice(-24000):s.text;
-  let user=`[지금까지 쓴 본문: ${s.title}]\n${body||"(아직 없음)"}\n\n[전개] 전체 ${steps.length}단계. 순서와 사건을 지키고, 사이 장면과 감정선은 자유롭게 채워.\n`+stepLines(steps,x=>x.have?` — 지금 ${x.have.toLocaleString()}어절 씀`:" — 아직 안 씀");
+  let user=`[지금까지 쓴 본문: ${s.title}]\n${body||"(아직 없음)"}\n\n`;
+  if(s.outline) user+=`[플롯 — 이 방향을 끝까지 지켜]\n${plotLines(s.outline)}\n\n`;
+  if(s.memo) user+=`[작가 메모 — 설정과 바라는 느낌. 반드시 반영]\n${s.memo}\n\n`;
+  user+=`[전개] 전체 ${steps.length}단계. 순서와 사건을 지키고, 사이 장면과 감정선은 자유롭게 채워.\n`+stepLines(steps,x=>x.have?` — 지금 ${x.have.toLocaleString()}어절 씀`:" — 아직 안 씀");
   user+=`\n\n[이번에 쓸 단계]\n${write.map(x=>`${x.num}단계 약 ${x.w.toLocaleString()}어절${x.have?" (이미 쓴 부분 바로 다음부터 이어서)":""}`).join("\n")}\n다른 단계는 쓰지 마.\n\n[단계 표시]\n${MARK_RULE(write[0].num)} 이미 일부 쓴 단계를 이어 쓸 때도 그 줄부터 시작해.`;
-  const chunks=planChunks(write), split=chunks.length>1;
-  user+=`\n\n[분량]\n이번에 본문 약 ${target.toLocaleString()}어절 이상.`;
-  user+=split?`\n약 ${CHUNK.toLocaleString()}어절씩 ${chunks.length}번에 나눠 이어 쓸 거야.\n`+chunkText(chunks[0],write,0,chunks.length,ending):"\n"+chunkText(chunks[0],write,0,1,ending);
+  const chunks=oneShot?[{s:0,e:write.length-1,w:target,sp:false,ep:false}]:planChunks(write), split=chunks.length>1;
+  user+=`\n\n[분량]\n이번에 본문 약 ${target.toLocaleString()}어절 이상.`+sizeText(chunks,write,ending,split,oneShot,target,false);
   user+="\n\n앞에서 숙지한 설정과 지침을 지켜서 써줘. 제목은 쓰지 말고, 앞 내용을 반복하지 말고 본문만 출력해줘.";
   return {setup,request:user,h:hashStr(setup),steps,write,chunks,split,target,ending,single:false,workId:s.workId||null,tplName:s.tpl||"",prevId:null,meta:null};
 }
+
 const SYS_SHORT="너는 한국어 소설가야. 사용자가 먼저 설정과 지침을 보내고, 다음 메시지로 집필을 요청한다. 설정과 지침은 끝까지 지킨다.";
 const SETUP_TAIL="\n\n---\n위 내용은 앞으로 쓸 소설의 설정과 지침이야. 아직 소설은 쓰지 마.\n숙지했다면 주연, 호칭·말투, 꼭 지킬 것을 3줄 이내로 요약하고, 마지막 줄에 '준비됐어요.'라고만 답해줘. 다음 메시지로 집필 요청을 보낼게.";
 const REQUEST_TAIL="\n\n앞에서 숙지한 설정과 지침을 지켜서 소설 본문만 출력해줘. 첫 줄은 '# 제목'으로 시작해줘.";
@@ -1124,16 +1170,14 @@ async function streamOnce(body,ctrl,onText){
   return {out,finish,block};
 }
 function needApi(msg){ if(S.apiKey&&S.model) return true; toast(msg||"설정에서 Gemini API 키와 모델을 먼저 연결해주세요",3200); return false }
-function startNew(){
-  const p=buildPrompt(); if(p.error){ toast(p.error); return }
-  const n=pad(), blanks=curTpl().body.match(/\{\{/g)?.length||0;
-  if(!n.secs.some(s=>s.memo.trim()||s.ai.trim())&&p.missing.length===blanks&&!S.scene.trim()&&!genreText()){ toast("메모를 적어주세요"); return }
+function startNew(raw){
+  const p=buildPrompt({oneShot:S.mode==="app",raw}); if(p.error){ toast(p.error); return }
   if(!p.write.length){ toast("쓸 단계를 체크해주세요"); return }
   if(S.mode==="app") sendToApp(p,{kind:"new"}); else runGen(p,{kind:"new"});
 }
 function startMore(s,idxs){
   if(!idxs.length) return;
-  const p=buildMore(s,idxs), dest={kind:"more",storyId:s.id};
+  const p=buildMore(s,idxs,S.mode==="app"), dest={kind:"more",storyId:s.id};
   if(S.mode==="app") sendToApp(p,dest); else runGen(p,dest);
 }
 async function runGen(p,dest){
@@ -1218,9 +1262,9 @@ function finishGen(note){
   }
   const {title,body}=titleOf(clean,p.write);
   const parts=p.single?{1:body}:splitByMarkers(body,p.write);
-  const secs=p.steps.map(x=>({title:p.single?"":x.k,words:x.w,memo:x.memo,ai:x.d,text:(parts[x.num]||"").trim(),chk:false}));
+  const secs=p.steps.map(x=>({title:p.single?"":x.k,words:x.w,memo:x.memo,ai:x.d,beat:x.beat||"",text:(parts[x.num]||"").trim(),chk:false}));
   const prev=p.prevId?S.stories.find(x=>x.id===p.prevId):null;
-  const s={id:uid(),title:title||(prev?prev.title+" (이어서)":"제목 없는 이야기"),secs,text:"",workId:p.workId,tpl:p.tplName,summary:p.meta?.summary||"",genre:p.meta?.genre||"",scene:p.meta?.scene||"",createdAt:Date.now(),progress:readAt,page:0,prevId:p.prevId||null};
+  const s={id:uid(),title:title||(prev?prev.title+" (이어서)":"제목 없는 이야기"),secs,text:"",workId:p.workId,tpl:p.tplName,summary:p.meta?.summary||"",genre:p.meta?.genre||"",scene:p.meta?.scene||"",createdAt:Date.now(),progress:readAt,page:0,prevId:p.prevId||null,outline:p.outline||null,memo:p.memo||""};
   syncText(s);
   if(!s.text.trim()) s.secs[0].text=body.trim(), syncText(s);
   S.stories.unshift(s); S.lastRead=s.id; libOpen=null; save(); tab="library"; stack=[]; render();
@@ -1390,8 +1434,7 @@ function endSheet(){
     (e,close)=>{ const b=e.target.closest("[data-x]"); if(!b) return; close(); closeReader(); if(b.dataset.x==="cont") startCont(id) });
 }
 function startCont(id){
-  const t=S.templates.find(x=>x.cont); if(!t){ toast("설정집 › 템플릿에서 '이어 쓰기' 템플릿을 켜주세요"); return }
-  S.activeTemplate=t.id; S.contStory=id; const st=S.stories.find(x=>x.id===id); if(st?.workId) S.activeWork=st.workId; save(); tab="write"; render();
+  S.contStory=id; S.noteView="memo"; const st=S.stories.find(x=>x.id===id); if(st?.workId) S.activeWork=st.workId; save(); tab="write"; render();
 }
 
 /* ───────── 랜덤 채우기 (API) ───────── */
@@ -1399,43 +1442,19 @@ const CHAR_KEY=/(인물|등장인물|주연|커플|캐릭터)/;
 let randBusy=false;
 async function randomFill(b,keywords){
   if(randBusy) return;
-  if(!S.apiKey||!S.model){ toast("랜덤 채우기는 Gemini API를 써요. 설정 › API 연결에서 키와 모델을 넣어주세요",3400); return }
-  const t=curTpl(), d=(S.drafts[t.id] ||= {});
-  const keys=[...new Set([...t.body.matchAll(/\{\{(.+?)\}\}/g)].map(m=>m[1]))];
-  // 인물 칸: 적혀 있으면 유지. 키워드 모드에서는 비어 있는 인물 칸도 채움
-  const fill=keys.filter(k=>!CHAR_KEY.test(k)||(keywords&&!(d[k]||"").trim())), chars=keys.filter(k=>!fill.includes(k));
-  const w=S.works.find(x=>x.id===S.activeWork);
-  const prev=t.cont?S.stories.find(x=>x.id===S.contStory):null;
-  if(t.cont&&!prev){ toast("이어 쓸 이야기를 먼저 골라주세요"); return }
-  const ids=fill.map((k,i)=>"f"+i);
-  let ctx=`2차 창작 소설의 기획안을 랜덤으로 채워줘. 뻔하지 않고 구체적인 아이디어로, 매번 다르게.\n\n[템플릿]\n${t.body}\n\n`;
-  ctx+=`[채울 칸]\n${fill.map((k,i)=>`${ids[i]}: {{${k}}}`).join("\n")}\nscene: 이야기에 꼭 넣을 장면 하나 (한두 문장)\nplot: 전체 전개를 4~6개의 짧은 키워드로, " → "로 연결 (예: 사고 → 피함 → 삽질 → 고백 → 썸 시작)\n\n`;
-  if(keywords) ctx+=`[핵심 키워드] ${keywords}\n이 키워드들을 이야기의 중심 소재로 삼아 모든 칸과 장면에 자연스럽게 녹여줘. 키워드를 그대로 나열하지 말고 이야기로 엮어.\n\n`;
-  ctx+=`각 칸은 템플릿 문장 안에 그대로 들어가므로 앞뒤 조사·어미와 자연스럽게 이어지는 짧은 구로 써줘. 마침표나 따옴표는 넣지 마.\n`;
-  if(chars.length) ctx+=`\n[이미 정해진 인물] ${chars.map(k=>`${k}=${(d[k]||"").trim()||"(미정)"}`).join(", ")} — 이 인물은 바꾸지 말고 그대로 활용해.`;
-  const g=genreText(); if(g) ctx+=`\n[장르] ${g} — 이 장르에 어울리게.`;
-  if(w&&(w.memo||"").trim()) ctx+=`\n\n[작품 설정: ${w.name}]\n${w.memo.trim().slice(0,6000)}`;
-  if(prev) ctx+=`\n\n[앞 이야기 끝부분: ${prev.title}]\n${prev.text.slice(-3000)}`;
-  const past=S.stories.filter(x=>(x.workId||null)===(w?.id||null)).slice(0,15).map(x=>x.title);
-  if(past.length) ctx+=`\n\n[이미 쓴 이야기 — 소재가 겹치지 않게]\n${past.join(", ")}`;
-  const props={}; ids.forEach((id,i)=>props[id]={type:"STRING",description:fill[i]}); props.scene={type:"STRING",description:"꼭 넣을 장면"}; props.plot={type:"STRING",description:"전개 메모"};
-  randBusy=true; b.disabled=true; b.classList.add("busy");
+  if(!needApi("랜덤은 Gemini API를 써요. 설정 › API 연결에서 키와 모델을 넣어주세요")) return;
+  const n=pad();
+  let ctx=`2차 창작 소설 아이디어를 작가가 휴대폰 메모장에 대충 적어 둔 것처럼 써줘. 뻔하지 않고 구체적으로, 매번 다르게.\n\n${planCtx()}`;
+  if(keywords) ctx+=`[핵심 키워드] ${keywords}\n이 키워드들을 이야기의 중심 소재로 삼아. 키워드를 그대로 나열하지 말고 이야기로 엮어.\n\n`;
+  ctx+=`[분량] 약 ${padTotal().toLocaleString()}어절짜리 이야기\n\n규칙:\n- 5~8줄. 줄마다 하나씩: 주연과 관계·호칭·말투(작품 설정을 따라), 바라는 분위기, 시작 장면, 중간 전개 아이디어 두세 개, 꼭 넣고 싶은 장면, 끝 장면.\n- 반말 메모체로 짧게. 정리된 문서처럼 쓰지 말고 떠오르는 대로 적은 느낌으로.\n- 번호나 기호 없이 줄글.`;
+  randBusy=true; busy(b,true);
   try{
-    const r=await apiFetch(`${API}/${S.model}:generateContent`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
-      contents:[{role:"user",parts:[{text:ctx}]}],
-      generationConfig:{temperature:Math.max(1.1,S.temperature),responseMimeType:"application/json",responseSchema:{type:"OBJECT",properties:props,required:[...ids,"scene","plot"]}}})},S.apiKey);
-    const j=await r.json().catch(()=>({}));
-    if(!r.ok) throw new Error(apiErr(r.status,j.error?.message||""));
-    const txt=(j.candidates?.[0]?.content?.parts||[]).filter(p=>!p.thought).map(p=>p.text||"").join("");
-    let o; try{ o=JSON.parse(txt.replace(/^```(json)?|```$/g,"").trim()) }catch(_){ throw new Error("랜덤 결과를 읽지 못했어요. 다시 눌러주세요.") }
-    const clean=v=>String(v||"").replace(/\s+/g," ").replace(/^[\s"“'‘]+|[\s"”'’.。]+$/g,"").trim();
-    fill.forEach((k,i)=>{ const v=clean(o[ids[i]]); if(v) d[k]=v });
-    if(clean(o.scene)) S.scene=String(o.scene).trim();
-    if(clean(o.plot)){ S.words=Math.min(WMAX,Math.max(WMIN,padTotal())); S.note={divided:false,secs:[newSec({memo:String(o.plot).replace(/\s*(->|>|→)\s*/g," → ").trim(),words:S.words})]} }
-    save(); const y=app.querySelector(".scroll")?.scrollTop||0; render(); const sc=app.querySelector(".scroll"); if(sc) sc.scrollTop=y;
+    const o=await aiJSON(ctx,{type:"OBJECT",properties:{memo:{type:"STRING"}},required:["memo"]},{temp:Math.max(1.1,S.temperature)});
+    const m=String(o.memo||"").replace(/\r/g,"").trim(); if(!m) throw new Error("랜덤 결과를 읽지 못했어요. 다시 눌러주세요.");
+    n.memo=m; n.plot=null; n.secs=[]; S.noteView="memo"; save(); render();
     toast(keywords?"키워드로 채웠어요":"랜덤으로 채웠어요",1400);
-  }catch(e){ toast(e.message==="Failed to fetch"?"인터넷 연결을 확인해주세요":e.message,3600) }
-  finally{ randBusy=false; if(b.isConnected){ b.disabled=false; b.classList.remove("busy") } }
+  }catch(e){ errToast(e) }
+  finally{ randBusy=false; busy(b,false) }
 }
 
 /* ───────── AI(JSON) 도우미 ───────── */
@@ -1970,10 +1989,10 @@ function stripChatter(t){
   if(!S.mode) S.mode=S.apiKey?"api":"app";
   if(!S.note&&((S.plotMemo||"").trim()||(S.plotSteps||[]).length)){
     const st=S.plotSteps||[];
-    S.note=st.length>1?{divided:true,secs:st.map((x,i)=>newSec({title:x.k||"",ai:x.d||"",memo:i===0?(S.plotMemo||""):"",words:r100(S.words/st.length)}))}
-      :{divided:false,secs:[newSec({memo:S.plotMemo||"",ai:st[0]?.d||"",words:S.words})]};
+    S.note={v:2,memo:S.plotMemo||"",plot:null,fid:"살려서",nsteps:0,secs:st.length>1?st.map(x=>newSec({title:x.k||"",scene:x.d||"",words:r100(S.words/st.length)})):[]};
     S.plotMemo=""; S.plotSteps=[]; save();
   }
+  pad();
   applyTheme(); render();
   if(S.pending){ tab="write"; render(); openPending() }
   if(navigator.storage?.persist) navigator.storage.persist().catch(()=>{});
