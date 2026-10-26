@@ -471,6 +471,36 @@ svg{flex:none}
 .btnsq svg{width:18px;height:18px}
 .btnfull.busy svg{animation:spin 1s linear infinite}
 input.shta{min-height:0;height:44px}
+/* 읽기 = 메모장 */
+.rflow,.live{letter-spacing:var(--rls,0)}
+.rtop .rt-n,.rtop .rt-k{display:flex;align-items:center}
+.reader.typing .rt-n,.reader:not(.typing) .rt-k{display:none}
+.rdone{width:32px;height:32px;border-radius:16px;background:var(--rink);color:var(--rbg);display:grid;place-items:center;margin:0 4px 0 6px}
+.rdone svg{width:16px;height:16px}
+.reader.editmode .rtop{opacity:1!important;transform:none!important;pointer-events:auto!important}
+.reader.editmode .rjump,.reader.editmode .rfoot .prog{display:none}
+.rfoot .ew{display:none}
+.reader.editmode .rfoot{justify-content:space-between}
+.reader.editmode .rfoot .ew{display:inline}
+.ettl{font-family:var(--rfont);font-size:calc(var(--rsize)*1.25);font-weight:700;text-align:center;line-height:1.5;margin:.8em 0 1.2em;letter-spacing:var(--rls,0)}
+.rflow[contenteditable]{outline:none;caret-color:var(--rink);min-height:55vh;-webkit-user-select:text;user-select:text}
+.rflow .mk{font-family:var(--sans);font-size:12.5px;color:var(--rmut);margin:1.8em 0 .8em;text-indent:0;letter-spacing:.2px}
+.rflow .speaking{background:color-mix(in srgb,var(--rink) 9%,transparent);border-radius:4px;box-shadow:0 0 0 4px color-mix(in srgb,var(--rink) 9%,transparent)}
+.rsel{position:absolute;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 50px);border-radius:12px;z-index:6;box-shadow:0 6px 20px rgba(0,0,0,.18)}
+.reader.typing .rsel{bottom:44px}
+.reader.typing .rfoot{bottom:0;padding-bottom:12px;padding-top:10px;background:var(--rbg);border-top:1px solid var(--rline)}
+.ttsbar{position:absolute;left:16px;right:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);display:flex;align-items:center;gap:8px;padding:7px 8px 7px 8px;border-radius:16px;background:var(--rink);color:var(--rbg);z-index:7;box-shadow:0 8px 24px rgba(0,0,0,.18)}
+.ttsbar[hidden]{display:none}
+.ttsbar .tb{width:36px;height:36px;border-radius:18px;display:grid;place-items:center;color:inherit}
+.ttsbar .tb svg{width:16px;height:16px}
+.ttsbar .tl{flex:1;font-size:13px;font-variant-numeric:tabular-nums;opacity:.75}
+.ttsbar .tr{height:30px;padding:0 12px;border-radius:15px;background:color-mix(in srgb,var(--rbg) 18%,transparent);color:inherit;font-size:13px;font-weight:700;font-variant-numeric:tabular-nums}
+.reader.speak .rfoot,.reader.speak .rjump{display:none}
+.slider .ico{display:grid;place-items:center;width:18px}
+.slider .ico svg{width:18px;height:18px}
+.stag{font-size:11.5px;padding:2px 7px;border-radius:9px;background:var(--fill);color:var(--ink2);white-space:nowrap;font-variant-numeric:tabular-nums}
+.stag[hidden]{display:none}
+.pend.rvp{z-index:46}
 </style>
 </head>
 <body>
@@ -500,7 +530,7 @@ const DEFAULTS={
   ],
   works:[], activeWork:null, activeTemplate:"t_short", words:1500, drafts:{}, scene:"", genre:"", genreCustom:"", randKw:"", plotMemo:"", plotSteps:[], splitWrite:null, contStory:null,
   stories:[], lastRead:null,
-  reader:{bg:"theme",font:"serif",size:18,lh:1.9,flow:"page"}
+  reader:{bg:"theme",font:"serif",size:18,lh:1.9,flow:"page",pad:0,ls:0,rate:1}
 };
 let S=null;
 let saveT=null;
@@ -527,7 +557,12 @@ const P={
   list:'<path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r=".8" fill="currentColor"/><circle cx="4.5" cy="12" r=".8" fill="currentColor"/><circle cx="4.5" cy="18" r=".8" fill="currentColor"/>',
   split:'<path d="M8 7l-5 5 5 5M16 7l5 5-5 5M3 12h18"/>',
   undo:'<path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 010 10h-3"/>',
-  send:'<path d="M5 12h14M13 6l6 6-6 6"/>'
+  send:'<path d="M5 12h14M13 6l6 6-6 6"/>',
+  lock:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/>',
+  unlock:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 017.5-2"/>',
+  redo2:'<path d="M15 14l5-5-5-5"/><path d="M20 9H10a5 5 0 000 10h3"/>',
+  play:'<path d="M8 5l11 7-11 7z" fill="currentColor"/>',pause:'<path d="M8 5v14M16 5v14"/>',
+  padn:'<path d="M4 4v16M20 4v16M9 8h6M9 12h6M9 16h6"/>',padw:'<path d="M4 4v16M20 4v16M7 8h10M7 12h10M7 16h10"/>'
 };
 const ic=(n,w)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"${w?` style="width:${w}px;height:${w}px"`:""}>${P[n]}</svg>`;
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -1113,25 +1148,30 @@ function buildPrompt(opt){
   const setup=sys+SETUP_TAIL, request=user+REQUEST_TAIL;
   return {setup,request,h:hashStr(setup),steps,write,chunks,split,target,ending,single,workId:w?.id||null,tplName:"",prevId:prev?.id||null,meta:storyMeta(),outline:n.plot&&!raw?{...n.plot}:null,memo:n.memo.trim()};
 }
-function moreRem(x){ return x.have>=x.w*0.9?Math.max(300,r100(x.w*0.25)):r100(x.w-x.have) }
 function buildMore(s,idxs,oneShot){
-  const secs=ensureSecs(s);
+  const secs=ensureSecs(s), mode=S.fillMode||"알아서";
   const steps=secs.map((x,i)=>({num:i+1,k:(x.title||"").trim()||`단계 ${i+1}`,memo:(x.memo||"").trim(),d:(x.ai||"").trim(),beat:(x.beat||"").trim(),w:+x.words||0,have:wc(x.text)}));
-  const write=idxs.map(i=>({...steps[i],w:moreRem(steps[i])}));
+  const write=idxs.map(i=>{ const j=fillJob(secs[i]); return {...steps[i],w:j.w,isNew:j.kind==="new"} });
   const target=write.reduce((a,x)=>a+x.w,0), ending=write.some(x=>x.num===steps.length);
+  const fills=write.filter(x=>!x.isNew), news=write.filter(x=>x.isNew);
   const setup=buildSys(s.workId,true)+SETUP_TAIL;
-  const body=s.text.length>24000?"…(앞부분 생략)…\n"+s.text.slice(-24000):s.text;
-  let user=`[지금까지 쓴 본문: ${s.title}]\n${body||"(아직 없음)"}\n\n`;
+  const full=s.text.length<=30000;
+  let user=`[지금까지 쓴 본문: ${s.title}]\n${full?s.text:"…(앞부분 생략)…\n"+s.text.slice(-20000)}\n\n`;
+  if(!full&&fills.length) user+=`[보강할 단계 원문]\n${fills.map(x=>`## ${x.num}. ${x.k}\n\n${secs[x.num-1].text}`).join("\n\n")}\n\n`;
   if(s.outline) user+=`[플롯 — 이 방향을 끝까지 지켜]\n${plotLines(s.outline)}\n\n`;
   if(s.memo) user+=`[작가 메모 — 설정과 바라는 느낌. 반드시 반영]\n${s.memo}\n\n`;
-  user+=`[전개] 전체 ${steps.length}단계. 순서와 사건을 지키고, 사이 장면과 감정선은 자유롭게 채워.\n`+stepLines(steps,x=>x.have?` — 지금 ${x.have.toLocaleString()}어절 씀`:" — 아직 안 씀");
-  user+=`\n\n[이번에 쓸 단계]\n${write.map(x=>`${x.num}단계 약 ${x.w.toLocaleString()}어절${x.have?" (이미 쓴 부분 바로 다음부터 이어서)":""}`).join("\n")}\n다른 단계는 쓰지 마.\n\n[단계 표시]\n${MARK_RULE(write[0].num)} 이미 일부 쓴 단계를 이어 쓸 때도 그 줄부터 시작해.`;
+  user+=`[전개] 전체 ${steps.length}단계\n`+stepLines(steps,x=>x.have?` — 지금 ${x.have.toLocaleString()}어절`:" — 아직 안 씀");
+  user+=`\n\n[이번 작업]\n`+write.map(x=>x.isNew?`- ${x.num}단계(${x.k}): 새로 쓰기. 약 ${x.w.toLocaleString()}어절.`:`- ${x.num}단계(${x.k}): 보강. 지금 ${x.have.toLocaleString()}어절 → ${x.w.toLocaleString()}어절 이상.`).join("\n");
+  if(fills.length) user+=`\n\n[보강 방법]\n${FILL[mode]}\n- 이 단계의 첫 장면, 끝나는 지점, 앞뒤 단계와의 연결은 그대로 둬.\n- 늘어난 분량만큼 장면이나 감정 변화가 늘어야 해. 같은 감정 비트를 반복하거나 수식어를 늘어놓아 분량을 채우지 마.\n- 설정·호칭·말투·시점·문체는 원문과 같게.`;
+  if(news.length) user+=`\n\n[새로 쓰기]\n앞뒤 단계와 자연스럽게 이어지게 써. ${ending?"마지막 단계에서는 이야기를 마무리하고 중심 소재와 모티프를 회수해.":"아직 결말은 쓰지 마."}`;
+  user+=`\n\n[출력]\n작업한 단계만 번호 순서대로 출력해. 각 단계는 "## 번호. 단계 이름" 줄로 시작하고, 보강하는 단계도 앞부분을 생략하지 말고 완성된 단계 전체를 처음부터 끝까지 다시 써. 다른 단계, 제목, 설명은 쓰지 마.`;
   const chunks=oneShot?[{s:0,e:write.length-1,w:target,sp:false,ep:false}]:planChunks(write), split=chunks.length>1;
-  user+=`\n\n[분량]\n이번에 본문 약 ${target.toLocaleString()}어절 이상.`+sizeText(chunks,write,ending,split,oneShot,target,false);
-  user+="\n\n앞에서 숙지한 설정과 지침을 지켜서 써줘. 제목은 쓰지 말고, 앞 내용을 반복하지 말고 본문만 출력해줘.";
-  return {setup,request:user,h:hashStr(setup),steps,write,chunks,split,target,ending,single:false,workId:s.workId||null,tplName:s.tpl||"",prevId:null,meta:null};
+  user+=`\n\n[분량]\n이번에 출력할 본문은 모두 약 ${target.toLocaleString()}어절 이상.`;
+  if(split) user+=`\n약 ${CHUNK.toLocaleString()}어절씩 ${chunks.length}번에 나눠 출력할 거야.\n`+chunkText(chunks[0],write,0,chunks.length,ending);
+  else if(oneShot) user+=" 한 번에 끝까지 다 써줘. 중간에 끊거나 요약하지 마.";
+  user+="\n\n앞에서 숙지한 설정과 지침을 지켜서 본문만 출력해줘.";
+  return {setup,request:user,h:hashStr(setup),steps,write,chunks,split,target,ending,single:false,workId:s.workId||null,tplName:s.tpl||"",prevId:null,meta:null,replace:true};
 }
-
 const SYS_SHORT="너는 한국어 소설가야. 사용자가 먼저 설정과 지침을 보내고, 다음 메시지로 집필을 요청한다. 설정과 지침은 끝까지 지킨다.";
 const SETUP_TAIL="\n\n---\n위 내용은 앞으로 쓸 소설의 설정과 지침이야. 아직 소설은 쓰지 마.\n숙지했다면 주연, 호칭·말투, 꼭 지킬 것을 3줄 이내로 요약하고, 마지막 줄에 '준비됐어요.'라고만 답해줘. 다음 메시지로 집필 요청을 보낼게.";
 const REQUEST_TAIL="\n\n앞에서 숙지한 설정과 지침을 지켜서 소설 본문만 출력해줘. 첫 줄은 '# 제목'으로 시작해줘.";
@@ -1253,7 +1293,7 @@ function finishGen(note){
     const s=S.stories.find(x=>x.id===g.dest.storyId); if(!s){ closeLive(); return }
     ensureSecs(s); const before=s.text.length;
     const parts=splitByMarkers(titleOf(clean,p.write).body,p.write);
-    for(const [num,txt] of Object.entries(parts)){ const sec=s.secs[num-1]; if(sec&&txt.trim()) sec.text=joinParts(sec.text||"",txt.trim()) }
+    for(const [num,txt] of Object.entries(parts)){ const sec=s.secs[num-1]; if(sec&&txt.trim()) sec.text=p.replace?txt.trim():joinParts(sec.text||"",txt.trim()) }
     s.secs.forEach(x=>x.chk=false);
     syncText(s); s.editedAt=Date.now();
     s.progress=s.text.length?Math.min(0.99,before/s.text.length):0;
@@ -1272,11 +1312,12 @@ function finishGen(note){
 }
 
 /* ───────── 본문 → HTML ───────── */
-function bodyHTML(text){
+function bodyHTML(text,pi){
+  let n=0;
   return text.replace(/\r/g,"").split(/\n+/).map(l=>l.trim()).filter(Boolean).map(l=>{
     if(/^(\*\s*){3,}$|^[＊*]{1,3}$|^-{3,}$|^◇+$|^#\s*$/.test(l)) return `<p class="brk">＊＊＊</p>`;
     const h=l.match(/^#{1,4}\s*(.+)$/); if(h) return `<h2>${esc(h[1].replace(/[*_]/g,""))}</h2>`;
-    return `<p>${esc(l).replace(/\*\*(.+?)\*\*/g,"$1").replace(/(^|[^*])\*([^*\n]+?)\*(?!\*)/g,"$1$2")}</p>`;
+    return `<p${pi?` data-pi="${n++}"`:""}>${esc(l).replace(/\*\*(.+?)\*\*/g,"$1").replace(/(^|[^*])\*([^*\n]+?)\*(?!\*)/g,"$1$2")}</p>`;
   }).join("");
 }
 
@@ -1288,8 +1329,9 @@ function readerVars(el){
   el.style.setProperty("--rfont",r.font==="serif"?"var(--serif)":"var(--sans)");
   el.style.setProperty("--rsize",r.size+"px");
   el.style.setProperty("--rlh",r.lh);
-  el.style.setProperty("--rp",innerWidth<380?"26px":"32px");
-  if(el.id!=="liveReader") el.classList.toggle("scrollmode",r.flow==="scroll");
+  el.style.setProperty("--rp",(r.pad||(innerWidth<380?26:32))+"px");
+  el.style.setProperty("--rls",(r.ls||0)+"em");
+  if(el.id!=="liveReader") el.classList.toggle("scrollmode",isScroll());
 }
 function openLive(multi){
   closeLive();
@@ -1319,44 +1361,138 @@ function updateLive(){
 }
 function closeLive(){ document.getElementById("liveReader")?.remove() }
 
+const isScroll=()=>!!(R&&R.edit)||S.reader.flow==="scroll";
+const MK_LINE=/^#{1,4}\s*\d{1,2}\s*[.)]/;
+function editHTML(text){
+  const ls=(text||"").replace(/\r/g,"").split("\n").map(l=>l.trim()).filter(Boolean);
+  if(!ls.length) return "<p><br></p>";
+  let pi=0;
+  return ls.map(l=>MK_LINE.test(l)?`<div class="mk">${esc(l)}</div>`:/^(\*\s*){3,}$|^[＊*]{1,3}$/.test(l)?`<p class="brk">${esc(l)}</p>`:`<p data-pi="${pi++}">${esc(l)}</p>`).join("");
+}
+function readEdit(){
+  const f=R?.el.querySelector(".rflow"); if(!f) return R?.story.text||"";
+  return f.innerText.replace(/\r/g,"").split("\n").map(l=>l.replace(/ /g," ").trim()).filter(Boolean).join("\n\n");
+}
+function textToSecs(s){
+  const old=s.secs||[], used=new Set(), parts=[]; let cur=null;
+  for(const l of (s.text||"").split("\n")){
+    const m=l.trim().match(/^#{1,4}\s*(\d{1,2})\s*[.)]?\s*(.*)$/);
+    if(m){ cur={title:m[2].trim(),lines:[]}; parts.push(cur); continue }
+    if(!cur){ cur={title:null,lines:[]}; parts.push(cur) }
+    cur.lines.push(l);
+  }
+  if(parts.length>1&&parts[0].title===null){ const p0=parts.shift(); parts[0].lines=p0.lines.concat(parts[0].lines) }
+  if(!parts.length) parts.push({title:null,lines:[]});
+  s.secs=parts.map((p,i)=>{
+    let o=p.title!=null?old.find((x,j)=>!used.has(j)&&(x.title||"").trim()===p.title):null;
+    if(!o&&old[i]&&!used.has(i)) o=old[i];
+    if(o) used.add(old.indexOf(o)); o=o||{};
+    const text=p.lines.join("\n").replace(/^\s+|\s+$/g,"");
+    return {...o,title:p.title??(o.title||""),words:+o.words||r100(wc(text)||100),memo:o.memo||"",ai:o.ai||"",text,chk:!!o.chk};
+  });
+  old.forEach((o,j)=>{ if(!used.has(j)&&!(o.text||"").trim()) s.secs.splice(Math.min(j,s.secs.length),0,{...o,text:""}) });
+}
 function openReader(id){
   const s=S.stories.find(x=>x.id===id); if(!s) return;
+  ensureSecs(s); if(!s.text&&s.secs.some(x=>x.text)) syncText(s);
   S.lastRead=id; save();
-  const el=document.createElement("div"); el.className="reader"; readerVars(el);
-  el.innerHTML=`<div class="rtop"><button class="icon" data-r="close" aria-label="닫기" style="color:inherit">${ic("back")}</button><div class="t">${esc(s.title)}</div><button class="icon" data-r="steps" aria-label="전개" style="color:inherit">${ic("list")}</button><button class="icon" data-r="edit" aria-label="고치기" style="color:inherit">${ic("pen")}</button><button class="icon" data-r="menu" aria-label="보기 설정" style="color:inherit">${ic("aa")}</button></div>
-    <div class="rbox"><div class="rflow"><p class="ttl">${esc(s.title)}</p>${bodyHTML(s.text)}<span class="end"></span></div><div class="rend"><div class="k">끝</div><button class="cta" data-r="cont">${ic("spark")}이어 쓰기</button><button class="textbtn" data-r="close">서재로</button></div></div>
+  const el=document.createElement("div"); el.className="reader";
+  R={el,story:s,page:0,pages:1,ratio:s.progress||0,edit:!s.locked,sel:null};
+  readerVars(el);
+  el.classList.toggle("editmode",R.edit);
+  const body=R.edit?`<div class="ettl">${esc(s.title)}</div><div class="rflow" contenteditable="true" spellcheck="false" autocorrect="off" autocapitalize="off">${editHTML(s.text)}</div>`
+    :`<div class="rflow"><p class="ttl">${esc(s.title)}</p>${bodyHTML(s.text,true)}<span class="end"></span></div>`;
+  el.innerHTML=`<div class="rtop"><button class="icon" data-r="close" aria-label="닫기" style="color:inherit">${ic("back")}</button><div class="t">${esc(s.title)}</div>
+      <span class="rt-n"><button class="icon" data-r="lock" aria-label="${R.edit?"잠그기":"잠금 풀기"}" style="color:${R.edit?"inherit":"var(--rink)"}">${ic(R.edit?"unlock":"lock")}</button><button class="icon" data-r="steps" aria-label="전개" style="color:inherit">${ic("list")}</button><button class="icon" data-r="menu" aria-label="보기 설정" style="color:inherit">${ic("aa")}</button></span>
+      <span class="rt-k"><button class="icon" data-r="undo" aria-label="실행 취소" style="color:inherit">${ic("undo")}</button><button class="icon" data-r="redo" aria-label="다시 실행" style="color:inherit">${ic("redo2")}</button><button class="rdone" data-r="done" aria-label="완료">${ic("check")}</button></span></div>
+    <div class="rbox">${body}<div class="rend"><div class="k">끝</div><button class="cta" data-r="cont">${ic("spark")}다음 편</button><button class="textbtn" data-r="close">서재로</button></div></div>
     <div class="tapzone"><div data-r="prev" style="width:30%"></div><div data-r="mid" style="width:40%"></div><div data-r="next" style="width:30%"></div></div>
-    <div class="rfoot"><span class="pn"></span><div class="prog"><i></i></div></div>
+    <div class="selbar rsel" hidden>${Object.entries(RW).map(([k,[l]])=>`<button data-rw="${k}">${k==="instr"?"지시…":l}</button>`).join("")}</div>
+    <div class="rfoot"><span class="pn"></span><div class="prog"><i></i></div><span class="ew"></span></div>
+    <div class="ttsbar" hidden><button class="tb" data-t="play" aria-label="재생">${ic("pause")}</button><span class="tl"></span><button class="tr" data-t="rate">1.0×</button><button class="tb" data-t="stop" aria-label="정지">${ic("x")}</button></div>
     <div class="rjump"><button data-r="top" aria-label="맨 위로">${ic("up")}</button><button data-r="bottom" aria-label="맨 아래로">${ic("dn")}</button></div>`;
   document.body.appendChild(el);
-  R={el,story:s,page:0,pages:1,ratio:s.progress||0};
   layoutReader(true);
-  const box=el.querySelector(".rbox"); let sr=0;
-  box.addEventListener("scroll",()=>{ if(S.reader.flow!=="scroll") return;
-    if(Date.now()>(R.jumpUntil||0)) el.classList.remove("chrome");
-    if(sr) return; sr=requestAnimationFrame(()=>{ sr=0; const max=box.scrollHeight-box.clientHeight; R.ratio=max>0?Math.min(1,box.scrollTop/max):1; paintScroll() }) },{passive:true});
-  box.addEventListener("click",e=>{ if(S.reader.flow!=="scroll"||e.target.closest("button")) return; if(String(getSelection())) return; el.classList.toggle("chrome") });
-  el.addEventListener("click",e=>{ const b=e.target.closest("[data-r]"); if(!b) return; const a=b.dataset.r;
+  const box=el.querySelector(".rbox"), flow=el.querySelector(".rflow"); let sr=0;
+  box.addEventListener("scroll",()=>{ if(!isScroll()) return;
+    if(!R.edit&&Date.now()>(R.jumpUntil||0)) el.classList.remove("chrome");
+    if(sr) return; sr=requestAnimationFrame(()=>{ sr=0; if(!R) return; const max=box.scrollHeight-box.clientHeight; R.ratio=max>0?Math.min(1,box.scrollTop/max):1; paintScroll() }) },{passive:true});
+  box.addEventListener("click",e=>{ if(R.edit||S.reader.flow!=="scroll"||e.target.closest("button")) return; if(String(getSelection())) return; el.classList.toggle("chrome") });
+  el.querySelectorAll(".rt-k button,.rsel").forEach(b=>{ b.addEventListener("pointerdown",e=>e.preventDefault()); b.addEventListener("mousedown",e=>e.preventDefault()) });
+  el.addEventListener("click",e=>{
+    const rw=e.target.closest("[data-rw]"); if(rw){ rewriteSheet(rw.dataset.rw); return }
+    const t=e.target.closest("[data-t]"); if(t){ ttsCtl(t.dataset.t); return }
+    const b=e.target.closest("[data-r]"); if(!b) return; const a=b.dataset.r;
     if(a==="prev") turn(-1); else if(a==="next") turn(1); else if(a==="mid") el.classList.toggle("chrome");
     else if(a==="close") closeReader(); else if(a==="menu") readerSheet();
-    else if(a==="steps") storySteps(R.story.id);
-    else if(a==="edit"){ const id=R.story.id; closeReader(); openEditor(id) }
+    else if(a==="steps"){ rdFlush(true); storySteps(R.story.id) }
+    else if(a==="lock") toggleLock();
+    else if(a==="undo") document.execCommand("undo");
+    else if(a==="redo") document.execCommand("redo");
+    else if(a==="done"){ flow.blur(); getSelection()?.removeAllRanges() }
     else if(a==="cont"){ const id=R.story.id; closeReader(); startCont(id) }
     else if(a==="top"||a==="bottom") jumpTo(a==="top"?0:1); });
-  let sx=0,sy=0,st=0;
-  el.addEventListener("touchstart",e=>{ sx=e.touches[0].clientX; sy=e.touches[0].clientY; st=Date.now() },{passive:true});
-  el.addEventListener("touchend",e=>{ if(S.reader.flow==="scroll") return; const dx=e.changedTouches[0].clientX-sx, dy=e.changedTouches[0].clientY-sy;
-    if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.3&&Date.now()-st<700){ e.preventDefault(); turn(dx<0?1:-1) } });
+  if(R.edit){
+    flow.addEventListener("focus",()=>{ el.classList.add("typing"); ttsStop(); vvFit() });
+    flow.addEventListener("blur",()=>{ el.classList.remove("typing"); el.querySelector(".rsel").hidden=true; vvFit(); rdFlush(true) });
+    flow.addEventListener("input",()=>{ clearTimeout(R.t); R.t=setTimeout(()=>rdFlush(false),500) });
+    flow.addEventListener("paste",e=>{ const t=e.clipboardData?.getData("text/plain"); if(t==null) return; e.preventDefault(); document.execCommand("insertText",false,t.replace(/\r/g,"")) });
+  } else {
+    let sx=0,sy=0,st=0;
+    el.addEventListener("touchstart",e=>{ sx=e.touches[0].clientX; sy=e.touches[0].clientY; st=Date.now() },{passive:true});
+    el.addEventListener("touchend",e=>{ if(isScroll()) return; const dx=e.changedTouches[0].clientX-sx, dy=e.changedTouches[0].clientY-sy;
+      if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.3&&Date.now()-st<700){ e.preventDefault(); turn(dx<0?1:-1) } });
+  }
   document.addEventListener("keydown",keyTurn);
+  rdFoot();
 }
-function keyTurn(e){ if(!R) return; if(S.reader.flow==="scroll"){ if(e.key==="Escape") closeReader(); return } if(e.key==="ArrowRight"||e.key===" ") turn(1); else if(e.key==="ArrowLeft") turn(-1); else if(e.key==="Escape") closeReader() }
+function vvFit(){
+  if(!R) return; const vv=window.visualViewport, el=R.el;
+  if(vv&&el.classList.contains("typing")){ el.style.top=vv.offsetTop+"px"; el.style.height=vv.height+"px"; el.style.bottom="auto" }
+  else { el.style.top=""; el.style.height=""; el.style.bottom="" }
+}
+window.visualViewport?.addEventListener("resize",vvFit); window.visualViewport?.addEventListener("scroll",vvFit);
+function rdFlush(normalize){
+  if(!R||!R.edit) return; clearTimeout(R.t);
+  const s=R.story, t=readEdit();
+  if(t!==s.text){ s.text=t; textToSecs(s); s.editedAt=Date.now(); save() }
+  if(normalize){ const before=s.text; syncText(s); if(s.text!==before){ save(); const f=R.el.querySelector(".rflow"), box=R.el.querySelector(".rbox"), y=box.scrollTop; f.innerHTML=editHTML(s.text); box.scrollTop=y } }
+  rdFoot();
+}
+function curSecIdx(){
+  if(!R) return 0; const f=R.el.querySelector(".rflow"), mks=[...f.querySelectorAll(".mk,h2")]; if(!mks.length) return 0;
+  const sel=getSelection(); let node=sel&&sel.rangeCount&&f.contains(sel.anchorNode)?sel.anchorNode:null;
+  if(node&&R.edit){ while(node&&node.parentNode!==f) node=node.parentNode; let k=-1; for(let n=node;n;n=n.previousElementSibling) if(n.classList?.contains("mk")){ k=mks.indexOf(n); break } return Math.max(0,k) }
+  let k=0; mks.forEach((m,i)=>{ if(m.getBoundingClientRect().top<140) k=i }); return k;
+}
+function rdFoot(){
+  if(!R||!R.edit||!R.el.isConnected) return; const s=R.story, i=Math.min(curSecIdx(),s.secs.length-1), x=s.secs[i]||{};
+  const tot=s.secs.reduce((a,v)=>a+(+v.words||0),0), wr=wc(s.text.replace(/^#{1,4}\s*\d+.*$/gm,""));
+  const lab=s.secs.length>1?`${i+1} ${(x.title||"").trim()||"단계"} · ${wc(x.text).toLocaleString()} / ${(+x.words||0).toLocaleString()}`:"";
+  R.el.querySelector(".pn").textContent=lab;
+  R.el.querySelector(".ew").textContent=tot?`${wr.toLocaleString()} / ${tot.toLocaleString()}어절`:`${wr.toLocaleString()}어절`;
+}
+document.addEventListener("selectionchange",()=>{
+  if(!R||!R.edit) return; const f=R.el.querySelector(".rflow"), bar=R.el.querySelector(".rsel"); if(!f) return;
+  const sel=getSelection();
+  if(sel&&sel.rangeCount&&!sel.isCollapsed&&f.contains(sel.anchorNode)&&f.contains(sel.focusNode)){
+    const t=sel.toString(); if(t.trim()){ R.sel={text:t,range:sel.getRangeAt(0).cloneRange()}; bar.hidden=!(S.mode==="api"&&S.apiKey&&S.model) } }
+  else if(!document.querySelector(".scrim")) bar.hidden=true;
+  clearTimeout(R.ft); R.ft=setTimeout(rdFoot,120);
+});
+function toggleLock(){
+  const s=R.story; rdFlush(true); s.locked=!s.locked; s.progress=R.ratio; save();
+  const id=s.id; R.el.remove(); document.removeEventListener("keydown",keyTurn); R=null; openReader(id);
+  toast(s.locked?"잠갔어요":"수정할 수 있어요",1000);
+}
+function keyTurn(e){ if(!R||R.edit) return; if(isScroll()){ if(e.key==="Escape") closeReader(); return } if(e.key==="ArrowRight"||e.key===" ") turn(1); else if(e.key==="ArrowLeft") turn(-1); else if(e.key==="Escape") closeReader() }
 function layoutReader(restore){
   if(!R) return; const {el,story}=R; readerVars(el);
   const box=el.querySelector(".rbox"), flow=el.querySelector(".rflow");
-  if(S.reader.flow==="scroll"){
+  if(isScroll()){
     flow.style.columnWidth=""; flow.style.columnGap=""; flow.style.width=""; flow.style.transform="";
     const ratio=restore?(story.progress||0):R.ratio;
-    requestAnimationFrame(()=>{ const max=box.scrollHeight-box.clientHeight; box.scrollTop=ratio*max; R.ratio=ratio; paintScroll() });
+    requestAnimationFrame(()=>{ if(!R) return; const max=box.scrollHeight-box.clientHeight; box.scrollTop=ratio*max; R.ratio=ratio; paintScroll() });
     return;
   }
   box.scrollTop=0;
@@ -1366,7 +1502,7 @@ function layoutReader(restore){
   const ratio=restore?(story.progress||0):R.ratio;
   flow.style.transition="none";
   requestAnimationFrame(()=>{
-    const end=flow.querySelector(".end");
+    if(!R) return; const end=flow.querySelector(".end");
     R.pages=Math.max(1,Math.round(end.offsetLeft/R.step)+1);
     R.page=Math.min(R.pages-1,Math.round(ratio*(R.pages-1)));
     paint(); requestAnimationFrame(()=>flow.style.transition="");
@@ -1382,13 +1518,14 @@ function paint(){
 }
 function paintScroll(){
   const {el,ratio}=R;
-  el.querySelector(".pn").textContent=`${Math.round(ratio*100)}%`;
+  if(R.edit){ clearTimeout(R.ft); R.ft=setTimeout(rdFoot,150) }
+  else el.querySelector(".pn").textContent=`${Math.round(ratio*100)}%`;
   el.querySelector(".rfoot .prog i").style.width=(ratio*100)+"%";
   R.story.progress=ratio; save();
 }
 function jumpTo(r){
   if(!R) return;
-  if(S.reader.flow==="scroll"){ const box=R.el.querySelector(".rbox"); R.jumpUntil=Date.now()+1200; box.scrollTo({top:r?box.scrollHeight:0,behavior:"smooth"}); return }
+  if(isScroll()){ const box=R.el.querySelector(".rbox"); R.jumpUntil=Date.now()+1200; box.scrollTo({top:r?box.scrollHeight:0,behavior:"smooth"}); return }
   R.page=r?R.pages-1:0; paint();
 }
 function turn(d){
@@ -1397,46 +1534,98 @@ function turn(d){
   if(n>=R.pages){ endSheet(); return }
   R.page=n; R.el.classList.remove("chrome"); paint();
 }
-function closeReader(){ if(!R) return; R.el.remove(); document.removeEventListener("keydown",keyTurn); R=null; document.querySelector(".scrim")?.remove(); render() }
-addEventListener("resize",()=>{ clearTimeout(window.__rz); window.__rz=setTimeout(()=>layoutReader(false),150) });
+function closeReader(){ if(!R) return; rdFlush(true); ttsStop(); R.el.remove(); document.removeEventListener("keydown",keyTurn); R=null; document.querySelector(".scrim")?.remove(); render() }
+addEventListener("resize",()=>{ clearTimeout(window.__rz); window.__rz=setTimeout(()=>{ if(R&&!R.el.classList.contains("typing")) layoutReader(false) },150) });
+
+/* 읽어주기 (기기 내장 음성) */
+const TTS={on:false,tok:0,i:0,list:[],rate:1};
+function ttsVoice(){
+  const vs=(window.speechSynthesis?.getVoices()||[]).filter(v=>/^ko/i.test(v.lang));
+  return vs.find(v=>/premium|enhanced|향상|고품질/i.test(v.name))||vs.find(v=>/yuna|유나/i.test(v.name))||vs[0]||null;
+}
+function ttsSplit(t){ const out=[]; for(const s of t.split(/(?<=[.!?…。」』”"])\s+/)){ let x=s; while(x.length>180){ const c=x.lastIndexOf(" ",180); out.push(x.slice(0,c>60?c:180)); x=x.slice(c>60?c:180).trim() } if(x.trim()) out.push(x) } return out }
+function ttsStart(){
+  if(!window.speechSynthesis){ toast("이 기기에서는 읽어주기를 쓸 수 없어요"); return }
+  if(!R) return; R.el.querySelector(".rflow").blur();
+  const ps=[...R.el.querySelectorAll(".rflow p[data-pi]")]; if(!ps.length) return;
+  let i=0;
+  if(isScroll()){ i=Math.max(0,ps.findIndex(p=>p.getBoundingClientRect().bottom>90)) }
+  else { const x0=R.page*R.step; i=Math.max(0,ps.findIndex(p=>p.offsetLeft>=x0-4)) }
+  TTS.list=ps; TTS.i=i; TTS.on=true; ttsSpeak(); ttsBar();
+}
+function ttsSpeak(){
+  if(!TTS.on||!R) return; const tok=++TTS.tok; speechSynthesis.cancel();
+  R.el.querySelectorAll(".speaking").forEach(x=>x.classList.remove("speaking"));
+  const p=TTS.list[TTS.i]; if(!p){ ttsStop(); return }
+  p.classList.add("speaking");
+  if(isScroll()){ const box=R.el.querySelector(".rbox"), r=p.getBoundingClientRect(); if(r.top<80||r.bottom>innerHeight-120) box.scrollTo({top:box.scrollTop+r.top-innerHeight*0.3,behavior:"smooth"}) }
+  else { const pg=Math.min(R.pages-1,Math.floor((p.offsetLeft+4)/R.step)); if(pg!==R.page){ R.page=pg; paint() } }
+  const parts=ttsSplit(p.textContent.trim()); let k=0, v=ttsVoice();
+  const next=()=>{ if(!TTS.on||tok!==TTS.tok) return;
+    if(k>=parts.length){ TTS.i++; ttsSpeak(); return }
+    const u=new SpeechSynthesisUtterance(parts[k++]); u.lang="ko-KR"; if(v) u.voice=v; u.rate=TTS.rate;
+    u.onend=next; u.onerror=e=>{ if(e.error!=="interrupted"&&e.error!=="canceled") next() };
+    speechSynthesis.speak(u) };
+  next(); ttsBar();
+}
+function ttsStop(){ if(!TTS.on&&!TTS.paused) return; TTS.on=false; TTS.paused=false; TTS.tok++; try{ speechSynthesis.cancel() }catch(_){} R?.el.querySelectorAll(".speaking").forEach(x=>x.classList.remove("speaking")); ttsBar() }
+function ttsCtl(a){
+  if(a==="stop") ttsStop();
+  if(a==="play"){ if(TTS.on){ TTS.on=false; TTS.paused=true; TTS.tok++; speechSynthesis.cancel() } else if(TTS.paused){ TTS.on=true; TTS.paused=false; ttsSpeak() } ttsBar() }
+  if(a==="rate"){ const rs=[0.8,1,1.2,1.5]; TTS.rate=rs[(rs.indexOf(TTS.rate)+1)%rs.length]; S.reader.rate=TTS.rate; save(); if(TTS.on) ttsSpeak(); else ttsBar() }
+}
+function ttsBar(){
+  if(!R) return; const b=R.el.querySelector(".ttsbar"), live=TTS.on||TTS.paused; b.hidden=!live; R.el.classList.toggle("speak",live);
+  if(!live) return;
+  b.querySelector('[data-t="play"]').innerHTML=ic(TTS.on?"pause":"play");
+  b.querySelector(".tl").textContent=`${Math.min(TTS.i+1,TTS.list.length)} / ${TTS.list.length}`;
+  b.querySelector('[data-t="rate"]').textContent=`${TTS.rate.toFixed(1)}×`;
+}
 
 function readerSheet(){
   const r=S.reader;
   const bgs=[["theme",isDark()?"#121416":"#F7F7F5","기본"],["gray","#E7ECEF","회색"],["dim","#1A2024","어둡게"],["black","#000000","검정"]];
+  const pad0=r.pad||(innerWidth<380?26:32);
   const s=sheet(`<div class="rsheet">
+    <button class="btnfull" data-x="tts" style="margin:0 0 22px">${ic("play")}읽어주기</button>
     <div class="swatches" role="radiogroup" aria-label="배경">${bgs.map(([k,c,l])=>`<button class="sw" data-bg="${k}" aria-label="${l}" aria-checked="${r.bg===k}" style="background:${c}"></button>`).join("")}</div>
     <div style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap">
       <div class="seg" role="group" aria-label="글꼴"><button data-font="serif" class="serif" aria-pressed="${r.font==="serif"}">명조</button><button data-font="sans" aria-pressed="${r.font==="sans"}">고딕</button></div>
-      <div class="seg" role="group" aria-label="읽는 방식"><button data-flow="page" aria-pressed="${r.flow!=="scroll"}">넘기기</button><button data-flow="scroll" aria-pressed="${r.flow==="scroll"}">스크롤</button></div>
+      <div class="seg" role="group" aria-label="잠금 상태에서 읽는 방식"><button data-flow="page" aria-pressed="${r.flow!=="scroll"}">넘기기</button><button data-flow="scroll" aria-pressed="${r.flow==="scroll"}">스크롤</button></div>
     </div>
     <div class="slider"><span class="s">가</span><input type="range" id="rsz" min="14" max="26" step="1" value="${r.size}" aria-label="글자 크기"><span class="l">가</span></div>
     <div class="slider"><span class="s">≡</span><input type="range" id="rlh" min="1.5" max="2.4" step="0.1" value="${r.lh}" aria-label="줄 간격"><span class="l">≡</span></div>
+    <div class="slider"><span class="s ico">${ic("padn",18)}</span><input type="range" id="rpd" min="12" max="56" step="2" value="${pad0}" aria-label="옆 여백"><span class="l ico">${ic("padw",18)}</span></div>
+    <div class="slider"><span class="s" style="letter-spacing:-1.5px;width:30px;white-space:nowrap;font-size:13px">가나</span><input type="range" id="rls" min="-0.06" max="0.12" step="0.01" value="${r.ls||0}" aria-label="자간"><span class="l" style="font-size:13px;letter-spacing:3px;width:30px;white-space:nowrap">가나</span></div>
     <div class="acts"><button class="textbtn" data-x="cont">다음 편</button><button class="textbtn" data-x="info">정보</button><button class="textbtn" data-x="revise">퇴고</button><button class="textbtn" data-x="del" style="color:var(--danger)">삭제</button></div></div>`,
     (e,close)=>{
       const b=e.target.closest("button"); if(!b) return;
       if(b.dataset.bg){ r.bg=b.dataset.bg; s.querySelectorAll(".sw").forEach(x=>x.setAttribute("aria-checked",x===b)); save(); layoutReader(false) }
       if(b.dataset.flow){ r.flow=b.dataset.flow; s.querySelectorAll("[data-flow]").forEach(x=>x.setAttribute("aria-pressed",x===b)); save(); layoutReader(false) }
       if(b.dataset.font){ r.font=b.dataset.font; s.querySelectorAll("[data-font]").forEach(x=>x.setAttribute("aria-pressed",x===b)); save(); layoutReader(false) }
+      if(b.dataset.x==="tts"){ close(); TTS.rate=S.reader.rate||1; ttsStart() }
       if(b.dataset.x==="cont"){ const id=R.story.id; close(); closeReader(); startCont(id) }
       if(b.dataset.x==="info"){ const id=R.story.id; close(); closeReader(); storyInfo(id) }
-      if(b.dataset.x==="revise"){ const id=R.story.id; close(); reviseSheet(id) }
+      if(b.dataset.x==="revise"){ const id=R.story.id; close(); rdFlush(true); reviseSheet(id) }
       if(b.dataset.x==="del"){ if(b.dataset.armed!=="1"){ b.dataset.armed="1"; b.textContent="한 번 더 누르면 삭제"; return }
-        S.stories=S.stories.filter(x=>x.id!==R.story.id); if(S.lastRead===R.story.id) S.lastRead=null; save(); close(); closeReader(); toast("삭제했어요") }
+        const id=R.story.id; R.edit=false; S.stories=S.stories.filter(x=>x.id!==id); if(S.lastRead===id) S.lastRead=null; save(); close(); closeReader(); toast("삭제했어요") }
     });
-  s.querySelector("#rsz").oninput=e=>{ r.size=+e.target.value; save(); layoutReader(false) };
-  s.querySelector("#rlh").oninput=e=>{ r.lh=+e.target.value; save(); layoutReader(false) };
+  const live=fn=>e=>{ fn(+e.target.value); save(); layoutReader(false) };
+  s.querySelector("#rsz").oninput=live(v=>r.size=v);
+  s.querySelector("#rlh").oninput=live(v=>r.lh=v);
+  s.querySelector("#rpd").oninput=live(v=>r.pad=v);
+  s.querySelector("#rls").oninput=live(v=>r.ls=v);
 }
 function endSheet(){
   const id=R.story.id;
   sheet(`<div style="text-align:center;padding:6px 0 4px"><div class="serif" style="font-size:19px;font-weight:700;margin-bottom:22px">끝까지 읽었어요</div>
-    <div style="display:flex;justify-content:center"><button class="cta" data-x="cont">${ic("spark")}이어 쓰기</button></div>
+    <div style="display:flex;justify-content:center"><button class="cta" data-x="cont">${ic("spark")}다음 편</button></div>
     <button class="textbtn" data-x="lib" style="margin-top:14px;color:var(--ink2)">서재로</button></div>`,
     (e,close)=>{ const b=e.target.closest("[data-x]"); if(!b) return; close(); closeReader(); if(b.dataset.x==="cont") startCont(id) });
 }
 function startCont(id){
   S.contStory=id; S.noteView="memo"; const st=S.stories.find(x=>x.id===id); if(st?.workId) S.activeWork=st.workId; save(); tab="write"; render();
 }
-
 /* ───────── 랜덤 채우기 (API) ───────── */
 const CHAR_KEY=/(인물|등장인물|주연|커플|캐릭터)/;
 let randBusy=false;
@@ -1543,38 +1732,48 @@ function ensureSecs(s){
   return s.secs;
 }
 function refreshViews(id){
-  if(ED&&ED.id===id) edRefresh();
-  else if(R&&R.story.id===id){ closeReader(); openReader(id) }
+  if(R&&R.story.id===id){ const r=R.ratio; R.story.progress=r; R.el.remove(); document.removeEventListener("keydown",keyTurn); R=null; openReader(id) }
 }
 
-/* ───────── 전개 시트 (이야기 안) ───────── */
+/* ───────── 전개 시트 (이야기 안 · 보강/새로 쓰기) ───────── */
+const FILL={"알아서":"사건과 순서는 그대로 두고, 모자란 분량을 새 에피소드(작은 사건·장면)와 묘사·심리 밀도로 채워. 이 단계에 더 어울리는 쪽을 골라 섞어.",
+  "에피소드 추가":"기존 사건 흐름 사이에 새 에피소드(작은 사건, 새 무대, 조연의 개입 등)를 1~3개 넣어 분량을 채워. 기존 문장과 장면은 최대한 살려.",
+  "묘사 밀도":"새 사건은 넣지 말고, 이미 있는 장면의 감각 묘사, 인물의 속마음, 대사와 행동 사이의 비트를 촘촘하게 해서 분량을 채워. 기존 문장과 대사는 최대한 살려."};
+function fillJob(x){ const h=wc(x.text), w=+x.words||0; return h<15?{kind:"new",h,w,add:w}:{kind:"fill",h,w:Math.max(w,r100(h*1.25)),add:Math.max(w,r100(h*1.25))-h} }
 function storySteps(id){
   const s=S.stories.find(x=>x.id===id); if(!s) return; const secs=ensureSecs(s);
+  if(!secs.some(x=>x.chk)) secs.forEach(x=>{ const h=wc(x.text); if(h<(+x.words||0)*0.9) x.chk=true });
   if(!secs.some(x=>x.chk)){ const f=secs.findIndex(x=>wc(x.text)<(+x.words||0)*0.9); if(f>=0) secs[f].chk=true }
   const sh=sheet(`<div id="ssBody"></div>`,(e,close)=>{
-    const b=e.target.closest("[data-x]"); if(!b||b.disabled) return; const x=b.dataset.x, i=+b.dataset.i;
+    const b=e.target.closest("[data-x],[data-fm]"); if(!b||b.disabled) return;
+    if(b.dataset.fm){ S.fillMode=b.dataset.fm; save(); sh.querySelectorAll("[data-fm]").forEach(x=>x.setAttribute("aria-pressed",x===b)); return }
+    const x=b.dataset.x, i=+b.dataset.i;
     if(x==="chk"){ secs[i].chk=!secs[i].chk; b.setAttribute("aria-checked",secs[i].chk); save(); upd() }
-    if(x==="add"){ secs.push({title:"",words:1000,memo:"",ai:"",text:"",chk:true}); syncText(s); save(); draw(); const t=sh.querySelectorAll(".st-t"); t[t.length-1]?.focus() }
-    if(x==="write"){ const idxs=secs.map((v,j)=>v.chk?j:-1).filter(j=>j>=0); if(!idxs.length) return; close(); if(ED) closeEditor(false); if(R) closeReader(); startMore(s,idxs) }
-  },()=>{ syncText(s); save(); if(ED&&ED.id===id) edRefresh() });
+    if(x==="add"){ secs.push({title:"",words:1000,memo:"",ai:"",text:"",chk:true}); save(); draw(); const t=sh.querySelectorAll(".st-t"); t[t.length-1]?.focus() }
+    if(x==="write"){ const idxs=secs.map((v,j)=>v.chk?j:-1).filter(j=>j>=0); if(!idxs.length) return; close(); if(R) closeReader(); startMore(s,idxs) }
+  },()=>{ syncText(s); save(); refreshViews(id) });
   const box=sh.querySelector("#ssBody");
-  const est=()=>secs.map((v,j)=>v.chk?moreRem({w:+v.words||0,have:wc(v.text)}):0).reduce((a,v)=>a+v,0);
   const upd=()=>{ const tot=secs.reduce((a,v)=>a+(+v.words||0),0), wr=secs.reduce((a,v)=>a+wc(v.text),0);
     box.querySelector("#ssTot").textContent=`${wr.toLocaleString()} / ${tot.toLocaleString()}어절`;
     box.querySelector("#ssBar").style.width=Math.min(100,tot?wr/tot*100:0)+"%";
-    const nums=secs.map((v,j)=>v.chk?j+1:0).filter(Boolean), go=box.querySelector("#ssGo");
-    go.disabled=!nums.length; go.innerHTML=`${ic("spark")}${nums.length?`${nums.join("·")}단계 쓰기 · 약 ${est().toLocaleString()}어절`:"쓸 단계를 체크하세요"}` };
+    const jobs=secs.map((v,j)=>v.chk?{j,...fillJob(v)}:null).filter(Boolean), go=box.querySelector("#ssGo");
+    const fills=jobs.filter(x=>x.kind==="fill").map(x=>x.j+1), news=jobs.filter(x=>x.kind==="new").map(x=>x.j+1);
+    const add=jobs.reduce((a,x)=>a+x.add,0);
+    go.disabled=!jobs.length;
+    go.innerHTML=`${ic(S.mode==="app"?"copy":"spark")}${jobs.length?[fills.length?`${fills.join("·")}단계 보강`:"",news.length?`${news.join("·")}단계 쓰기`:"",`+${add.toLocaleString()}어절`].filter(Boolean).join(" · "):"단계를 체크하세요"}`;
+    secs.forEach((v,j)=>{ const h=wc(v.text), w=+v.words||0, tag=box.querySelector(`.stag[data-i="${j}"]`); if(tag){ const t=h<15?"새로":h<w*0.9?`−${(w-h).toLocaleString()}`:""; tag.textContent=t; tag.hidden=!t } }) };
   const draw=()=>{
+    const fm=S.fillMode||"알아서";
     box.innerHTML=`<div class="shh"><b>전개</b><span class="cnt" id="ssTot"></span></div><div class="sbar"><i id="ssBar"></i></div>
     ${secs.map((x,i)=>{ const h=wc(x.text); return `<div class="srow"><button class="nchk" data-x="chk" data-i="${i}" aria-checked="${!!x.chk}" aria-label="체크">${ic("check")}</button><div class="bd">
-      <div class="l1"><span class="nn">${i+1}.</span><input class="st-t" data-i="${i}" value="${esc(x.title||"")}" placeholder="단계" autocomplete="off"><span class="cnt">${h.toLocaleString()} / <input class="nw st-w" data-i="${i}" inputmode="numeric" value="${+x.words||0}" autocomplete="off"></span></div>
-      ${h?((x.ai||x.memo)?`<div class="sub">${esc(x.ai||x.memo)}</div>`:""):`<textarea class="shta st-m" data-i="${i}" rows="1" placeholder="메모">${esc(x.memo||"")}</textarea>`}
+      <div class="l1"><span class="nn">${i+1}.</span><input class="st-t" data-i="${i}" value="${esc(x.title||"")}" placeholder="단계" autocomplete="off"><span class="stag" data-i="${i}" hidden></span><span class="cnt">${h.toLocaleString()} / <input class="nw st-w" data-i="${i}" inputmode="numeric" value="${+x.words||0}" autocomplete="off"></span></div>
+      ${(x.ai||x.memo)?`<div class="sub">${esc(x.ai||x.memo)}</div>`:""}
       <div class="sbar"><i style="width:${Math.min(100,h/((+x.words)||1)*100)}%"></i></div></div></div>` }).join("")}
     <button class="addstep" data-x="add">${ic("plus")}단계 추가</button>
-    <button class="btnfull" data-x="write" id="ssGo"></button>`;
+    <div class="shl">모자란 단계는</div><div class="segbox">${Object.keys(FILL).map(k=>`<button data-fm="${k}" aria-pressed="${fm===k}">${k}</button>`).join("")}</div>
+    <button class="btnfull" data-x="write" id="ssGo" style="margin-top:14px"></button>`;
     box.querySelectorAll(".st-t").forEach(t=>t.addEventListener("input",()=>{ secs[+t.dataset.i].title=t.value; save() }));
     box.querySelectorAll(".st-w").forEach(t=>{ t.addEventListener("input",()=>{ t.value=t.value.replace(/[^0-9]/g,"").slice(0,5); if(+t.value>0){ secs[+t.dataset.i].words=+t.value; save(); upd() } }) });
-    box.querySelectorAll(".st-m").forEach(t=>{ growTA(t); t.addEventListener("input",()=>{ secs[+t.dataset.i].memo=t.value; growTA(t); save() }) });
     upd();
   };
   draw();
@@ -1589,68 +1788,18 @@ function storyInfo(id){
   });
 }
 
-/* ───────── 편집 (읽으면서 고치기) ───────── */
-let ED=null;
+/* ───────── 선택한 부분 AI 다듬기 (API) ───────── */
 const RW={rewrite:["다시 쓰기","같은 내용을 더 자연스럽고 생생한 문장으로 다시 써."],longer:["늘리기","묘사·심리·감각을 더해 1.5~2배 길이로 늘려."],shorter:["줄이기","핵심만 남겨 절반 정도 길이로 줄여."],tone:["말투","인물의 평소 말투와 설정집의 호칭·말투에 맞게 고쳐."],instr:["지시",""]};
-function openEditor(id){
-  const s=S.stories.find(x=>x.id===id); if(!s) return; ensureSecs(s);
-  closeEditor(false);
-  const el=document.createElement("div"); el.className="editor";
-  ED={id,s,el,hist:[],sel:null,fi:0};
-  el.innerHTML=`<div class="etop"><button class="textbtn" data-e="done">완료</button><input class="etitle" value="${esc(s.title)}" aria-label="제목" autocomplete="off"><button class="textbtn" data-e="steps">전개</button><button class="textbtn" data-e="revise">퇴고</button></div>
-    <div class="selbar" hidden>${Object.entries(RW).map(([k,[l]])=>`<button data-rw="${k}">${k==="instr"?"지시…":l}</button>`).join("")}</div>
-    <div class="ebody"></div>
-    <div class="efoot"><button class="icon" data-e="undo" aria-label="되돌리기" disabled>${ic("undo")}</button><span class="einfo"></span></div>`;
-  document.body.appendChild(el);
-  el.querySelector(".selbar").addEventListener("pointerdown",e=>e.preventDefault());
-  el.querySelector(".selbar").addEventListener("mousedown",e=>e.preventDefault());
-  el.querySelector(".etitle").addEventListener("input",e=>{ s.title=e.target.value.trim()||"제목 없는 이야기"; save() });
-  el.addEventListener("click",e=>{
-    const b=e.target.closest("[data-e],[data-rw]"); if(!b||b.disabled) return;
-    if(b.dataset.rw){ rewriteSheet(b.dataset.rw); return }
-    const a=b.dataset.e;
-    if(a==="done") closeEditor(true);
-    if(a==="steps") storySteps(id);
-    if(a==="revise") reviseSheet(id);
-    if(a==="undo"){ const h=ED.hist.pop(); if(!h) return; s.secs[h.i].text=h.before; syncText(s); save(); edRefresh(); toast("되돌렸어요",1000) }
-  });
-  document.addEventListener("selectionchange",edSel);
-  edRefresh();
-}
-function closeEditor(reopen){
-  if(!ED) return; const {id,s,el}=ED; clearTimeout(ED.t); syncText(s); save();
-  document.removeEventListener("selectionchange",edSel); el.remove(); ED=null;
-  if(reopen) openReader(id);
-}
-function edRefresh(){
-  if(!ED) return; const {s,el}=ED, multi=s.secs.length>1, eb=el.querySelector(".ebody"), y=eb.scrollTop;
-  eb.innerHTML=s.secs.map((x,i)=>`${multi?`<div class="esec"><span>${i+1} · ${esc((x.title||"").trim()||"단계 "+(i+1))}</span><i></i><span class="ecnt" data-i="${i}"></span></div>`:""}<textarea class="edta" data-i="${i}" spellcheck="false">${esc(x.text||"")}</textarea>`).join("");
-  eb.querySelectorAll(".edta").forEach(ta=>{ const i=+ta.dataset.i; growTA(ta);
-    ta.addEventListener("input",()=>{ s.secs[i].text=ta.value; const yy=eb.scrollTop; growTA(ta); eb.scrollTop=yy; edCount(i); clearTimeout(ED.t); ED.t=setTimeout(()=>{ syncText(s); s.editedAt=Date.now(); save() },400) });
-    ta.addEventListener("focus",()=>{ ED.fi=i; edCount(i) }); });
-  s.secs.forEach((_,i)=>edCount(i)); eb.scrollTop=y;
-  el.querySelector('[data-e="undo"]').disabled=!ED.hist.length;
-  el.querySelector(".etitle").value=s.title;
-}
-function edCount(i){
-  const x=ED.s.secs[i]; if(!x) return; const h=wc(x.text), w=+x.words||0, lab=w?`${h.toLocaleString()} / ${w.toLocaleString()}`:h.toLocaleString();
-  const c=ED.el.querySelector(`.ecnt[data-i="${i}"]`); if(c) c.textContent=lab;
-  if(i===ED.fi) ED.el.querySelector(".einfo").textContent=(ED.s.secs.length>1?`${i+1}단계 · `:"")+lab+"어절";
-}
-function edSel(){
-  if(!ED) return; const a=document.activeElement, bar=ED.el.querySelector(".selbar");
-  if(a&&a.classList?.contains("edta")&&a.selectionEnd>a.selectionStart){
-    ED.sel={i:+a.dataset.i,start:a.selectionStart,end:a.selectionEnd,text:a.value.slice(a.selectionStart,a.selectionEnd)}; bar.hidden=false }
-  else if(!document.querySelector(".scrim")) bar.hidden=true;
-}
-function edApply(sel,v){
-  const s=ED.s, sec=s.secs[sel.i]; let at=sel.start;
-  if((sec.text||"").slice(sel.start,sel.end)!==sel.text){ at=(sec.text||"").indexOf(sel.text); if(at<0){ toast("본문이 바뀌어 적용하지 못했어요"); return } }
-  ED.hist.push({i:sel.i,before:sec.text}); sec.text=sec.text.slice(0,at)+v+sec.text.slice(at+sel.text.length);
-  syncText(s); s.editedAt=Date.now(); save(); ED.sel=null; edRefresh(); toast("적용했어요",1000);
+function rdReplace(sel,v){
+  if(!R) return; const f=R.el.querySelector(".rflow");
+  try{ f.focus({preventScroll:true}); const g=getSelection(); g.removeAllRanges(); g.addRange(sel.range);
+    if(g.toString()===sel.text&&document.execCommand("insertText",false,v)){ rdFlush(false); toast("적용했어요",1000); return } }catch(_){}
+  rdFlush(false); const s=R.story, at=s.text.indexOf(sel.text);
+  if(at<0){ toast("본문이 바뀌어 적용하지 못했어요"); return }
+  s.text=s.text.slice(0,at)+v+s.text.slice(at+sel.text.length); textToSecs(s); save(); refreshViews(s.id); toast("적용했어요",1000);
 }
 function rewriteSheet(mode){
-  const sel=ED?.sel; if(!sel||!sel.text.trim()) return;
+  const sel=R?.sel; if(!sel||!sel.text.trim()) return;
   const [label,base]=RW[mode]; let opts=[], k=0, running=false;
   const sh=sheet(`<div class="shh"><b>${label}</b><button class="x" data-x="close" aria-label="닫기">${ic("x")}</button></div>
     <div class="shl">원래</div><div class="rworig">${esc(sel.text)}</div>
@@ -1664,14 +1813,14 @@ function rewriteSheet(mode){
       if((x==="prev"||x==="next")&&opts.length){ k=(k+(x==="next"?1:-1)+opts.length)%opts.length; show() }
       if(x==="edit"&&opts.length){ box.readOnly=false; box.focus() }
       if(x==="ask"){ const v=ins.value.trim(); if(!v&&mode==="instr") return; run(v) }
-      if(x==="apply"){ const v=box.value; if(!v.trim()) return; close(); edApply(sel,v) }
-    },()=>{ if(ED) ED.el.querySelector(".selbar").hidden=true });
+      if(x==="apply"){ const v=box.value; if(!v.trim()) return; close(); rdReplace(sel,v) }
+    },()=>{ if(R) R.el.querySelector(".rsel").hidden=true });
   const box=sh.querySelector("#rwBox"), ins=sh.querySelector("#rwIns"), ap=sh.querySelector('[data-x="apply"]');
   const show=()=>{ box.readOnly=true; box.value=opts[k]||""; growTA(box); sh.querySelector("#rwN").textContent=opts.length?`제안 ${k+1}/${opts.length}`:"제안"; ap.disabled=!opts.length };
   const run=async extra=>{
     if(running) return; running=true; box.value="…"; ap.disabled=true;
-    const sec=ED.s.secs[sel.i], t=sec.text||"", w=S.works.find(x=>x.id===ED.s.workId);
-    const prompt=`소설의 일부를 고쳐 쓴다. [고칠 부분]만 대체할 새 텍스트를 서로 다르게 3가지 제안해줘.\n\n${w&&(w.memo||"").trim()?`[작품 설정: ${w.name}]\n${w.memo.trim().slice(0,4000)}\n\n`:""}[앞 문맥]\n${t.slice(Math.max(0,sel.start-1500),sel.start)}\n\n[고칠 부분]\n${sel.text}\n\n[뒤 문맥]\n${t.slice(sel.end,sel.end+800)}\n\n[방법]\n${[base,extra].filter(Boolean).join("\n")}\n\n규칙: 앞뒤 문맥과 자연스럽게 이어지게. 문단 구분과 대사의 큰따옴표 형식은 유지. 고칠 부분을 대신할 텍스트만 쓰고 설명은 쓰지 마.`;
+    const s=R.story, t=s.text, at=Math.max(0,t.indexOf(sel.text)), w=S.works.find(x=>x.id===s.workId);
+    const prompt=`소설의 일부를 고쳐 쓴다. [고칠 부분]만 대체할 새 텍스트를 서로 다르게 3가지 제안해줘.\n\n${w&&(w.memo||"").trim()?`[작품 설정: ${w.name}]\n${w.memo.trim().slice(0,4000)}\n\n`:""}[앞 문맥]\n${t.slice(Math.max(0,at-1500),at)}\n\n[고칠 부분]\n${sel.text}\n\n[뒤 문맥]\n${t.slice(at+sel.text.length,at+sel.text.length+800)}\n\n[방법]\n${[base,extra].filter(Boolean).join("\n")}\n\n규칙: 앞뒤 문맥과 자연스럽게 이어지게. 문단 구분과 대사의 큰따옴표 형식은 유지. 고칠 부분을 대신할 텍스트만 쓰고 설명은 쓰지 마.`;
     try{ const o=await aiJSON(prompt,{type:"OBJECT",properties:{options:{type:"ARRAY",items:{type:"STRING"}}},required:["options"]},{temp:Math.max(0.9,S.temperature)});
       opts=(o.options||[]).map(v=>String(v).trim()).filter(Boolean).slice(0,3); k=0;
       if(!opts.length) throw new Error("제안을 만들지 못했어요. 다시 시도해주세요."); show(); ins.value="" }
@@ -1680,7 +1829,6 @@ function rewriteSheet(mode){
   ins.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); sh.querySelector('[data-x="ask"]').click() } });
   if(mode==="instr") setTimeout(()=>ins.focus(),50); else run("");
 }
-
 /* ───────── 퇴고 ───────── */
 const RV_OPTS=[
   ["dialog","대사 자연스러움","대사","대사가 입말처럼 자연스러운지. 문어체·설명조 대사를 인물이 실제로 할 법한 말로."],
@@ -1698,8 +1846,8 @@ const RV_STR={"가볍게":"꼭 고쳐야 할 명확한 문제만 적게 고쳐. 
 function reviseSheet(id){
   const s=S.stories.find(x=>x.id===id); if(!s) return; const secs=ensureSecs(s);
   const def=S.reviseDefault||{str:"보통",opts:["dialog","canon","proof","density","repeat"]};
-  const sel=ED&&ED.id===id&&ED.sel&&ED.sel.text.trim()?{...ED.sel}:null;
-  const cfg={scope:sel?"sel":"all",str:def.str,opts:new Set(def.opts),pick:new Set(secs.map((x,i)=>x.chk&&wc(x.text)?i:-1).filter(i=>i>=0)),ins:""};
+  const sel=R&&R.story.id===id&&R.sel&&R.sel.text.trim()&&s.text.includes(R.sel.text)?{text:R.sel.text}:null;
+  const cfg={scope:"all",str:def.str,opts:new Set(def.opts),pick:new Set(secs.map((x,i)=>x.chk&&wc(x.text)?i:-1).filter(i=>i>=0)),ins:""};
   const last=S.revise?.storyId===id&&S.revise.edits.length;
   const sh=sheet(`<div id="rvS"></div>`,(e,close)=>{
     const b=e.target.closest("button"); if(!b||b.disabled) return; const d=b.dataset;
@@ -1710,7 +1858,7 @@ function reviseSheet(id){
     if(d.op){ cfg.opts.has(d.op)?cfg.opts.delete(d.op):cfg.opts.add(d.op); draw() }
     if(d.x==="def"){ S.reviseDefault={str:cfg.str,opts:[...cfg.opts]}; save(); toast("기본값으로 저장했어요",1200) }
     if(d.x==="last"){ close(); openRevise(id,{busy:false}) }
-    if(d.x==="go"){ close(); runRevise(s,cfg,sel) }
+    if(d.x==="go"){ close(); if(S.mode==="app") revisePaste(s,cfg,sel); else runRevise(s,cfg,sel) }
   });
   const box=sh.querySelector("#rvS");
   const draw=()=>{
@@ -1723,44 +1871,100 @@ function reviseSheet(id){
       <div class="optgrid">${RV_OPTS.map(([k,l])=>`<button data-op="${k}" aria-pressed="${cfg.opts.has(k)}">${ic("check")}${l}</button>`).join("")}</div>
       <input class="askin" id="rvIns" placeholder="따로 부탁할 것 (선택)" value="${esc(cfg.ins)}" autocomplete="off">
       ${last?`<button class="textbtn" data-x="last" style="display:block;margin:10px auto 0;color:var(--ink2);font-size:14px">지난 결과 보기</button>`:""}
-      <button class="btnfull" data-x="go" style="margin-top:14px" ${cfg.opts.size&&(cfg.scope!=="step"||pk.length)?"":"disabled"}>${ic("spark")}퇴고하기 · ${cfg.opts.size}개 항목</button>`;
+      <button class="btnfull" data-x="go" style="margin-top:14px" ${cfg.opts.size&&(cfg.scope!=="step"||pk.length)?"":"disabled"}>${ic(S.mode==="app"?"copy":"spark")}${S.mode==="app"?"프롬프트 복사":"퇴고하기"} · ${cfg.opts.size}개 항목</button>`;
     box.querySelector("#rvIns").addEventListener("input",e=>cfg.ins=e.target.value);
   };
   draw();
+}
+function reviseHead(s,cfg){
+  const opts=RV_OPTS.filter(o=>cfg.opts.has(o[0])), w=S.works.find(x=>x.id===s.workId), ins=(cfg.ins||"").trim();
+  return {opts,labels:opts.map(o=>o[1]),head:`너는 한국어 소설 편집자야. 아래 [본문]을 퇴고해서 고칠 곳을 목록으로 줘.\n\n${w&&(w.memo||"").trim()?`[설정집: ${w.name}]\n${w.memo.trim().slice(0,5000)}\n\n`:""}${s.memo?`[작가 메모]\n${s.memo}\n\n`:""}[신경 쓸 부분]\n${opts.map(o=>`- ${o[1]}: ${o[3]}`).join("\n")}\n\n[강도]\n${cfg.str} — ${RV_STR[cfg.str]}${ins?`\n\n[따로 부탁]\n${ins}`:""}`};
+}
+const RV_RULE=`- 원문은 [본문]에서 글자 하나 바꾸지 않고 그대로 복사한 연속된 구간이야. 한 문장 안에서, 고칠 부분을 포함하되 짧게(보통 10~120자). 줄바꿈을 넣지 마.\n- 수정은 원문을 대신할 새 텍스트. 줄바꿈 없이. 원문과 같으면 안 돼.\n- 이유는 20자 안팎으로.\n- 같은 곳을 두 번 고치지 마. 사건과 설정은 바꾸지 말고 작가의 문체는 유지해.`;
+function reviseScopeText(s,cfg,sel){
+  if(cfg.scope==="sel"&&sel) return sel.text;
+  if(cfg.scope==="step"){ return [...cfg.pick].sort((a,b)=>a-b).map(i=>{ const x=s.secs[i]; return `## ${i+1}. ${(x.title||"").trim()||"단계 "+(i+1)}\n\n${x.text||""}` }).join("\n\n") }
+  return s.text;
+}
+function rvMatch(s,find,repl){
+  const vars=[[find,repl]]; const uq=t=>t.replace(/^[`'"「]+|[`'"」]+$/g,"").trim();
+  if(uq(find)!==find) vars.push([uq(find),uq(repl)]);
+  for(const [f,r] of vars){ if(!f.trim()||f===r||/\n/.test(f)||/\n/.test(r)) continue;
+    const i=s.secs.findIndex(x=>(x.text||"").includes(f)); if(i>=0) return {sec:i,find:f,replace:r,pos:s.secs[i].text.indexOf(f)} }
+  return null;
+}
+function rvCat(c,labels){ c=String(c||"").trim(); return labels.find(l=>l===c)||labels.find(l=>c&&(l.includes(c)||c.includes(l.slice(0,2))))||labels[0] }
+function rvPush(list,s,e,labels){
+  const m=rvMatch(s,String(e.find||""),String(e.replace||"")); if(!m) return false;
+  if(list.some(x=>x.sec===m.sec&&(x.find.includes(m.find)||m.find.includes(x.find)))) return false;
+  list.push({id:uid(),cat:rvCat(e.cat,labels),...m,why:String(e.why||"").trim(),st:"new"}); return true;
 }
 let RV=null;
 async function runRevise(s,cfg,sel){
   if(!needApi("퇴고는 Gemini API를 써요. 설정 › API 연결에서 키와 모델을 넣어주세요")) return;
   const secs=s.secs, units=[];
-  if(cfg.scope==="sel"&&sel) units.push({sec:sel.i,text:sel.text});
+  if(cfg.scope==="sel"&&sel) units.push(sel.text);
   else { const idx=cfg.scope==="step"?[...cfg.pick].sort((a,b)=>a-b):secs.map((_,i)=>i);
     for(const i of idx){ const t=secs[i].text||""; if(!t.trim()) continue; let buf="";
-      for(const para of t.split(/(?<=\n)/)){ if(buf.length+para.length>9000&&buf.trim()){ units.push({sec:i,text:buf}); buf="" } buf+=para }
-      if(buf.trim()) units.push({sec:i,text:buf}) } }
+      for(const para of t.split(/(?<=\n)/)){ if(buf.length+para.length>9000&&buf.trim()){ units.push(buf); buf="" } buf+=para }
+      if(buf.trim()) units.push(buf) } }
   if(!units.length){ toast("퇴고할 본문이 없어요"); return }
-  const ctrl=new AbortController();
+  const ctrl=new AbortController(), {head,labels}=reviseHead(s,cfg);
   S.revise={storyId:s.id,edits:[]}; save();
   openRevise(s.id,{busy:true,done:0,total:units.length,ctrl});
-  const opts=RV_OPTS.filter(o=>cfg.opts.has(o[0])), labels=opts.map(o=>o[1]);
-  const w=S.works.find(x=>x.id===s.workId), ins=(cfg.ins||"").trim();
   for(let u=0;u<units.length;u++){
-    const un=units[u];
-    const prompt=`너는 한국어 소설 편집자야. 아래 [본문]을 퇴고해서 고칠 곳을 목록으로 줘.\n\n${w&&(w.memo||"").trim()?`[설정집: ${w.name}]\n${w.memo.trim().slice(0,5000)}\n\n`:""}[신경 쓸 부분]\n${opts.map(o=>`- ${o[1]}: ${o[3]}`).join("\n")}\n\n[강도]\n${cfg.str} — ${RV_STR[cfg.str]}${ins?`\n\n[따로 부탁]\n${ins}`:""}\n\n[본문]\n${un.text}\n\n규칙:\n- find는 [본문]에서 글자 하나 바꾸지 않고 그대로 복사한 연속된 구간이야. 한 문장 안에서, 고칠 부분을 포함하되 짧게(보통 10~120자). 줄바꿈을 넣지 마.\n- replace는 find를 대신할 새 텍스트. 줄바꿈 없이. find와 같으면 안 돼.\n- why는 고친 이유를 20자 안팎으로.\n- cat은 [신경 쓸 부분]의 이름 중 하나를 그대로.\n- 같은 곳을 두 번 고치지 마. 고칠 곳이 없으면 빈 목록.`;
+    const prompt=`${head}\n\n[본문]\n${units[u]}\n\n규칙:\n${RV_RULE.replace(/원문/g,"find").replace(/수정은/,"replace는").replace(/이유는/,"why는")}\n- cat은 [신경 쓸 부분]의 이름 중 하나를 그대로. 고칠 곳이 없으면 빈 목록.`;
     try{
       const o=await aiJSON(prompt,{type:"OBJECT",properties:{edits:ARR({cat:{type:"STRING"},find:{type:"STRING"},replace:{type:"STRING"},why:{type:"STRING"}},["cat","find","replace","why"])},required:["edits"]},{temp:0.3,signal:ctrl.signal});
-      const t=secs[un.sec].text||"";
-      for(const e of o.edits||[]){
-        const f=String(e.find||""), r=String(e.replace||"");
-        if(!f.trim()||f===r||/\n/.test(f)||/\n/.test(r)||!t.includes(f)) continue;
-        if(S.revise.edits.some(x=>x.sec===un.sec&&(x.find.includes(f)||f.includes(x.find)))) continue;
-        const c=String(e.cat||""), cat=labels.find(l=>l===c)||labels.find(l=>c&&(l.includes(c)||c.includes(l.slice(0,2))))||labels[0];
-        S.revise.edits.push({id:uid(),cat,sec:un.sec,find:f,replace:r,why:String(e.why||"").trim(),st:"new",pos:t.indexOf(f)});
-      }
+      for(const e of o.edits||[]) rvPush(S.revise.edits,s,e,labels);
     }catch(e){ if(e.name==="AbortError") break; errToast(e); break }
     S.revise.edits.sort((a,b)=>a.sec-b.sec||a.pos-b.pos);
     save(); if(RV&&RV.id===s.id){ RV.done=u+1; rvDraw() }
   }
   if(RV&&RV.id===s.id){ RV.busy=false; if(!RV.cur) RV.cur=S.revise.edits.find(e=>e.st==="new")?.id||null; rvDraw() }
+}
+/* 퇴고 · Gemini 앱 붙여넣기 */
+function parseRevise(raw,s,labels){
+  const blocks=[]; let cat=labels[0], cur=null;
+  for(const line of (raw||"").replace(/\r/g,"").split("\n")){
+    const l=line.replace(/^\s*(?:[-*•>]|\d+[.)])\s+/,"").replace(/\*\*/g,"").trim(); if(!l) continue;
+    let m=l.match(/^(원문|수정|이유)\s*[:：]\s*(.*)$/);
+    if(m){ if(m[1]==="원문"){ cur={cat,find:m[2].trim(),replace:"",why:""}; blocks.push(cur) } else if(cur) cur[m[1]==="수정"?"replace":"why"]=m[2].trim(); continue }
+    m=l.match(/^\[(.{1,20})\]$/)||l.match(/^#{1,4}\s*(.{1,20})$/)||l.match(/^【(.{1,20})】$/);
+    if(m){ cat=m[1].trim(); continue }
+  }
+  const out=[]; for(const b of blocks) if(b.find&&b.replace) rvPush(out,s,b,labels);
+  out.sort((a,b)=>a.sec-b.sec||a.pos-b.pos);
+  return {found:blocks.filter(b=>b.find&&b.replace).length,edits:out};
+}
+function revisePaste(s,cfg,sel){
+  const text=reviseScopeText(s,cfg,sel); if(!text.trim()){ toast("퇴고할 본문이 없어요"); return }
+  const {head,labels}=reviseHead(s,cfg);
+  const prompt=`${head}\n\n[본문]\n${text}\n\n[답하는 형식]\n고칠 곳마다 아래 네 줄을 쓰고 빈 줄로 구분해. 다른 말, 인사, 요약, 표, 코드 블록은 쓰지 마.\n[항목 이름]\n원문: …\n수정: …\n이유: …\n\n규칙:\n${RV_RULE}\n- 항목 이름은 [신경 쓸 부분]의 이름 중 하나를 그대로.`;
+  S.rvPend={storyId:s.id,prompt,labels,draft:"",copied:false}; save();
+  copyText(prompt).then(ok=>{ if(S.rvPend){ S.rvPend.copied=ok; save() } openRvPaste(); if(ok) toast("퇴고 프롬프트를 복사했어요",1400) });
+}
+function openRvPaste(){
+  document.querySelector(".pend.rvp")?.remove();
+  const pd=S.rvPend; if(!pd) return; const s=S.stories.find(x=>x.id===pd.storyId); if(!s){ S.rvPend=null; save(); return }
+  const el=document.createElement("div"); el.className="pend rvp"; document.body.appendChild(el);
+  el.innerHTML=`<div class="head" style="padding-left:10px;padding-right:18px"><button class="icon" data-p="cancel" aria-label="취소">${ic("back")}</button><div style="font-weight:700;font-size:16px;flex:1;text-align:center">퇴고 · Gemini</div><a class="textbtn" href="https://gemini.google.com/app" target="_blank" rel="noopener" style="font-size:15px;text-decoration:none">Gemini 열기</a></div>
+    <div class="scroll" style="display:flex;flex-direction:column">
+      <div class="pstep ${pd.copied?"done":"on"}"><div class="num">${pd.copied?ic("check",14):1}</div><div class="bd"><div class="tt">프롬프트 복사</div><div class="ds">${esc(s.title)} · ${pd.labels.length}개 항목</div><button class="ghost sm" data-p="copy">${ic("copy")}${pd.copied?"다시 복사":"복사"}</button></div></div>
+      <div class="pstep on"><div class="num">2</div><div class="bd"><div class="tt">답 붙여넣기</div><button class="ghost sm" data-p="paste">${ic("copy")}클립보드에서 붙여넣기</button></div></div>
+      <textarea class="pastebox" id="rvBox" placeholder="Gemini의 답">${esc(pd.draft||"")}</textarea>
+    </div>
+    <div class="nfoot"><div class="nsum" style="margin-top:0"><span>인식한 항목</span><b id="rvN">0개</b></div><button class="btnfull" data-p="done" id="rvGo" disabled>결과 보기</button></div>`;
+  const box=el.querySelector("#rvBox");
+  const upd=()=>{ pd.draft=box.value; save(); const r=parseRevise(box.value,s,pd.labels); el.querySelector("#rvN").textContent=r.found&&r.edits.length<r.found?`${r.edits.length}개 (본문과 안 맞는 ${r.found-r.edits.length}개 제외)`:`${r.edits.length}개`; el.querySelector("#rvGo").disabled=!r.edits.length; return r };
+  box.addEventListener("input",upd); upd();
+  el.addEventListener("click",async e=>{
+    const b=e.target.closest("[data-p]"); if(!b||b.disabled) return; const a=b.dataset.p;
+    if(a==="copy"){ if(await copyText(pd.prompt)){ pd.copied=true; save(); toast("복사했어요",1200); openRvPaste() } else toast("복사하지 못했어요. 다시 눌러주세요") }
+    if(a==="paste"){ try{ const t=await navigator.clipboard.readText(); if(t){ box.value=t; upd() } else toast("클립보드가 비어 있어요") }catch(_){ box.focus(); toast("입력칸을 길게 눌러 붙여넣어 주세요",2400) } }
+    if(a==="cancel"){ if(b.dataset.armed!=="1"&&box.value.trim()){ b.dataset.armed="1"; toast("붙여넣은 내용이 있어요. 한 번 더 누르면 취소돼요",2000); return } S.rvPend=null; save(); el.remove() }
+    if(a==="done"){ const r=upd(); if(!r.edits.length) return; S.revise={storyId:s.id,edits:r.edits}; S.rvPend=null; save(); el.remove(); openRevise(s.id,{busy:false}) }
+  });
 }
 function openRevise(id,st){
   document.querySelector(".rvw")?.remove();
@@ -1995,6 +2199,7 @@ function stripChatter(t){
   pad();
   applyTheme(); render();
   if(S.pending){ tab="write"; render(); openPending() }
+  else if(S.rvPend) openRvPaste();
   if(navigator.storage?.persist) navigator.storage.persist().catch(()=>{});
 })();
 </script>
