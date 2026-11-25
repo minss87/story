@@ -946,8 +946,9 @@ function vPrefs(){
   return `<div class="head">${backBtn()}</div>
   <div class="scroll">
     <div class="title">설정</div>
-    <div class="cap">Gemini</div>
+    <div class="cap">AI</div>
     <div class="row" style="cursor:default"><span>쓰는 방식</span><div class="seg"><button data-act="setmode" data-k="app" aria-pressed="${S.mode==="app"}">앱 붙여넣기</button><button data-act="setmode" data-k="api" aria-pressed="${S.mode==="api"}">API</button></div></div>
+    <div class="row" style="cursor:default"><span>API 서비스</span><div class="seg"><button data-act="setprov" data-k="gemini" aria-pressed="${!isOR()}">Gemini</button><button data-act="setprov" data-k="openrouter" aria-pressed="${isOR()}">OpenRouter</button></div></div>
     <button class="row" data-act="gemini"><span>API 연결</span><span style="display:flex;align-items:center;gap:8px"><span class="val">${curKey()?esc((isOR()?"OpenRouter · ":"")+(modelLabel()||"모델 미선택")):"연결 안 됨"}</span><i class="dot ${hasApi()?"":"off"}"></i>${ic("chev")}</span></button>
     <div class="cap">화면</div>
     <div class="row" style="cursor:default"><span>모드</span><div class="seg">${Object.entries(th).map(([k,l])=>`<button data-act="settheme" data-k="${k}" aria-pressed="${S.theme===k}">${l}</button>`).join("")}</div></div>
@@ -1102,6 +1103,7 @@ function geminiEditor(){
     setProv(k){ if(k===prov) return; const kv=app.querySelector("#f_key")?.value; prov=k; render(); }
   });
 }
+ACT.setprov=(d)=>{ S.provider=d.k; save(); render(); if(!hasApi()) setTimeout(geminiEditor,50) };
 ACT.prov=(d)=>{ const ed=stack[stack.length-1]; if(ed?.setProv) ed.setProv(d.k) };
 ACT.loadmodels=async(d,b)=>{
   const or=!!app.querySelector("#f_mq");
