@@ -502,6 +502,20 @@ input.shta{min-height:0;height:44px}
 .stag{font-size:11.5px;padding:2px 7px;border-radius:9px;background:var(--fill);color:var(--ink2);white-space:nowrap;font-variant-numeric:tabular-nums}
 .stag[hidden]{display:none}
 .pend.rvp{z-index:46}
+.nsbox{align-items:stretch}
+.nsbox button{flex:0 0 34%}
+.nsin{flex:1;display:flex;align-items:center;justify-content:center;gap:4px;border-radius:9px;color:var(--ink3);font-size:14px;font-weight:600}
+.nsin input{width:5.5em;border:0;background:transparent;outline:none;text-align:center;font:inherit;color:var(--ink);padding:0}
+.nsin input::placeholder{color:var(--ink3)}
+.nsin span{display:none}
+.nsin.on{background:var(--card);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.nsin.on span{display:inline}
+.nsin.on input{width:2.6em;text-align:right}
+.exlist{border-top:1px solid var(--line);margin-top:6px}
+.exrow{display:flex;align-items:center;gap:10px;width:100%;padding:16px 2px;border-bottom:1px solid var(--line);font-size:16px;font-weight:600;text-align:left}
+.exrow span:first-child{flex:1}
+.exrow .ext{font-size:13px;color:var(--ink3);font-weight:500}
+.exrow svg{width:16px;height:16px;color:var(--ink3)}
 </style>
 </head>
 <body>
@@ -521,7 +535,7 @@ const store={
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 const FANFIC_DEFAULT="[2차 창작 집필 지침]\n분량이 아니라 밀도로 완성하는 2차 창작 소설을 쓴다. 입체적인 글은 분량이 아니라 변화의 개수로 만들어진다.\n\n1. 설정\n- 요청과 설정집에 적힌 원작, 주연, 호칭, 말투가 항상 우선이다. 호칭과 말투(반말/존댓말)는 지정된 대로만 쓰고 임의로 바꾸지 않는다.\n- 비어 있는 항목은 원작의 성격과 관계성을 계승해 합리적으로 정한다. 되묻지 말고 바로 쓴다.\n- 이번 이야기는 완전히 새로운 플롯이어야 한다. 아래 '이전 작품'이 있으면 소재와 구조가 겹치지 않게 한다.\n\n2. 쓰기 전 설계 (설계 내용은 출력하지 않는다)\n- 중심 사건 하나를 정하고, 그것이 인물을 실제로 어떻게 바꾸는지 결말선을 먼저 잡는다.\n- 씬 목록을 만들되, 각 씬은 직전 씬과 무대·온도·감정 방향 중 최소 하나가 다르게 배치한다. (예: 질투 → 들통 → 역공 → 반전)\n- 주연 중 한 명(보통 과묵한 쪽)에게 질투·불안·오해·후회 중 하나로 속을 태우는 마음고생 라인을 반드시 준다. 겉은 무표정해도 내면이 무너지는 대비를 쓰고, 논리로 말하던 인물이라면 그 논리가 무너지는 지점(감정을 다른 이름으로 부르다 들키는 식)을 보여준다. 거짓말할 때의 버릇 같은 tell은 한두 개만 정해 남발하지 않는다.\n- 조연에게 각기 다른 기능을 준다. 사건을 굴리는 자, 온도를 올리는 자, 반전의 단서를 심는 자. 같은 역할의 조연을 중복 배치하지 않는다.\n- 소품이나 모티프 하나를 정해 발단과 결말을 묶는다. 발단이 된 사물이 마지막 회수 지점이 되게 한다.\n\n3. 서사 원칙\n- 모든 문장과 대사에 의미가 있어야 한다. 필요한 만큼만 쓰고, 필요 없어지면 끝낸다. 특정 순간을 길게 묘사하려면 그럴 가치가 있어야 한다.\n- 한 씬은 한 번만. 같은 감정 비트를 조금씩 바꿔 반복하지 않는다. 같은 대사나 같은 깨달음을 여러 조연에게 시키지 않는다.\n- 분량이 길면 그만큼 장면 전환·씬·감정 변화가 많아야 한다. 무대를 계속 바꾼다.\n- 감정은 축적되고 방향을 튼다. 위기·오해·질투는 해소되며 인물을 실제로 한 뼘 자라게 한다.\n- 지정 분량은 하한일 뿐이다. 분량이 모자라면 문장을 늘리지 말고 새로운 씬, 감정이 한 번 더 방향을 트는 지점, 조연의 새 기능으로 새 국면을 연다.\n- 중심 소재는 결말에서 회수한다.\n\n4. 장르·톤\n분위기나 요청에 아래 장르가 오면 그 특징을 따른다. 두 장르를 조합할 때는 번갈아 놓지 말고 원인과 결과로 엮는다. (예: 질투가 원인이 되어 잘못을 저지르고 → 후회로 만회)\n- 후회남주: 무심함·오해로 상처를 준 인물이 뒤늦게 깨닫고 만회한다. 사과해 본 적 없는 인물이 처음 사과하는 순간이 전환점.\n- 피폐·이별 위기: 권태·오해·자존심이 곪아 관계가 무너지기 직전까지 갔다가 밑바닥에서 되돌아온다. 무겁고 진지하게.\n- 달달·슈가러시: 갈등은 거의 없거나 가볍게, 애정 표현과 다정한 순간에 집중한다.\n- 코미디·시트콤: 작은 사건 하나가 하루 안에 사방으로 굴러가고, 끝에 감정으로 착지한다. 무대를 빠르게 바꾼다.\n- 질투·오해: 제3자의 등장으로 한쪽이 속을 태운다. 실제 위협은 없어도 마음고생이 이야기를 끈다.\n- 잔잔·힐링: 큰 사건 없이 계절과 생활의 결을 따라가며, 소품과 반복되는 일상으로 관계의 깊이를 드러낸다.\n- 판타지 한 스푼: 회귀·몸 바뀜·미래 보기처럼 설정 하나만 비틀고, 그 가정 위에서 관계를 다시 비춘다.\n- 가족 드라마: 주변 가족과 인물이 크게 개입해 웃음과 온기를 만든다. 집 전체가 주인공.\n- 성장·커리어: 일에서의 좌절과 성취가 관계와 얽혀 두 사람을 성장시킨다.\n- 재회·시간 점프: 몇 년 뒤로 건너뛰어 세월이 쌓인 관계의 무게를 그린다.\n\n5. 문체\n- 지문에서 주연 두 사람을 \"이 사람\", \"그 사람\"으로 지칭하지 않는다. 반드시 이름으로 쓴다. (조연을 문맥상 \"그 사람\"이라 하는 건 괜찮다)\n- 과묵한 인물의 대사 앞에 말줄임표(…)를 습관적으로 붙이지 않는다. 짧은 대답은 \"응.\", \"괜찮아.\"처럼 담백하게 쓰고, 정곡을 찔려 말문이 막힐 때, 사과·고백 직전의 머뭇거림, 빈 침묵 \"…\"에만 쓴다.\n- 문단 사이 불필요한 공백이나 문장 속 말줄임표를 흩뿌리지 않는다.\n- 대사로만 사건을 때우지 않고 지문·묘사·심리를 갖춘다. 다만 묘사를 위한 묘사로 분량을 늘리지 않는다.\n- 장 구분이 필요하면 \"## 1\", \"## 2\"처럼 소제목 줄을 쓴다.\n\n6. 적절성\n원작 인물이 미성년이거나 미성년으로 볼 수 있으면 성적·선정적 묘사를 하지 않는다. 로맨스는 정서와 관계 중심으로 그린다.\n\n7. 출력 전 스스로 점검 (점검 내용은 출력하지 않는다)\n같은 감정 비트 반복이 없는지, 매 씬이 직전과 다른지, 주연을 \"이 사람/그 사람\"으로 부른 곳이 없는지, 말줄임표가 꼭 필요한 곳에만 있는지, 분량용 문장이 없는지, 소품이 처음과 끝을 묶는지, 조연 기능이 겹치지 않는지, 호칭·말투를 정확히 지켰는지, 마음고생이 인물을 실제로 변화시켰는지 확인한다.";
 const DEFAULTS={
-  theme:"system", mode:null, fanficPrompt:FANFIC_DEFAULT, apiKey:"", model:"", temperature:1, pending:null,
+  theme:"system", mode:null, fanficPrompt:FANFIC_DEFAULT, apiKey:"", model:"", provider:"gemini", orKey:"", orModel:"", orOut:0, temperature:1, pending:null,
   basePrompt:"한국어 소설로 써줘. 대사는 큰따옴표로 쓰고, 장면이 바뀌면 빈 줄 다음에 * * * 한 줄을 넣어줘.\n분량을 채우기 위한 반복 묘사나 요약식 서술은 하지 말고, 장면과 감정 변화의 밀도를 우선해줘.\n설정집에 적힌 인물의 성격과 호칭을 반드시 지키고, 캐릭터 붕괴 없이 써줘.\n설명이나 인사말 없이 소설 본문만 출력해줘.",
   templates:[
     {id:"t_short",name:"단편",body:"{{인물 1}}와(과) {{인물 2}}이(가) {{장소·상황}}에서 {{사건}} 이야기. 분위기는 {{분위기}}, 시점은 {{시점}}."},
@@ -632,7 +646,7 @@ function vLibrary(){
 }
 
 /* ───────── 쓰기 ───────── */
-const WMIN=50, WMAX=30000;
+const WMIN=50, WMAX=9999999;
 const CHUNK=3500; // 한 번의 응답에 기대하는 어절 수
 function wordCount(t){ const b=splitTitle(t||"").body.trim(); return b?b.split(/\s+/).length:0 }
 const GENRES=[
@@ -716,7 +730,7 @@ function bindWrite(){
   if(m){ growTA(m); m.addEventListener("input",()=>{ n.memo=m.value; const sc=app.querySelector(".scroll"), y=sc.scrollTop; growTA(m); sc.scrollTop=y; save() }) }
   app.querySelectorAll(".nw").forEach(x=>{ const i=+x.dataset.i;
     x.addEventListener("click",e=>e.stopPropagation());
-    x.addEventListener("input",()=>{ x.value=x.value.replace(/[^0-9]/g,"").slice(0,5); const v=+x.value; if(v>0){ n.secs[i].words=v; save(); updFoot() } });
+    x.addEventListener("input",()=>{ x.value=x.value.replace(/[^0-9]/g,"").slice(0,7); const v=+x.value; if(v>0){ n.secs[i].words=v; save(); updFoot() } });
     x.addEventListener("blur",()=>{ let v=+x.value||n.secs[i].words; v=Math.min(WMAX,Math.max(100,v)); n.secs[i].words=v; x.value=v; save(); updFoot() }); });
   bindDrag();
 }
@@ -752,7 +766,8 @@ function basicEditor(){
     </select>${ic("chev")}</div></div>
     ${S.genre==="custom"?`<input class="line-input genre-custom" id="genreCustom" placeholder="질투 + 후회남주" value="${esc(S.genreCustom)}" autocomplete="off">`:""}
     <div class="genre"><span>다음 편</span><div class="sel"><select id="contStory" class="${S.contStory?"":"none"}" aria-label="이어 쓸 이야기"><option value="">새 이야기</option>${opts}</select>${ic("chev")}</div></div>
-    <label class="words"><span>분량</span><input id="words" type="text" inputmode="numeric" pattern="[0-9]*" value="${padTotal()}" aria-label="분량(어절)" autocomplete="off"><span>어절</span></label>`},
+    <label class="words"><span>분량</span><input id="words" type="text" inputmode="numeric" pattern="[0-9]*" value="${padTotal()}" aria-label="분량(어절)" autocomplete="off"><span>어절</span></label>
+    <label class="words"><span>단계 수</span><input id="nsteps" type="text" inputmode="numeric" pattern="[0-9]*" value="${n.nsteps||""}" placeholder="알아서" aria-label="단계 수" autocomplete="off"><span>개</span></label>`},
     after:bindBasic});
 }
 function bindBasic(){
@@ -761,7 +776,8 @@ function bindBasic(){
   app.querySelector("#genreCustom")?.addEventListener("input",e=>{ S.genreCustom=e.target.value; save() });
   app.querySelector("#contStory").addEventListener("change",e=>{ S.contStory=e.target.value||null; const st=S.stories.find(x=>x.id===S.contStory); if(st?.workId) S.activeWork=st.workId; save(); keepScroll(render) });
   const wi=app.querySelector("#words");
-  wi.addEventListener("input",()=>{ wi.value=wi.value.replace(/[^0-9]/g,"").slice(0,5) });
+  wi.addEventListener("input",()=>{ wi.value=wi.value.replace(/[^0-9]/g,"").slice(0,7) });
+  const ns=app.querySelector("#nsteps"); ns?.addEventListener("input",()=>{ ns.value=ns.value.replace(/[^0-9]/g,"").slice(0,3); pad().nsteps=Math.min(200,+ns.value||0); save() });
   wi.addEventListener("blur",()=>{ const n=pad(); let v=+wi.value||padTotal(); v=Math.min(WMAX,Math.max(WMIN,v)); S.words=v;
     if(n.secs.length){ const tot=padTotal()||1; n.secs.forEach(s=>s.words=r100(s.words*v/tot)) } wi.value=padTotal(); save() });
 }
@@ -781,7 +797,7 @@ const PLOT_SCHEMA={type:"OBJECT",properties:{title:{type:"STRING"},logline:{type
   steps:{type:"ARRAY",items:{type:"OBJECT",properties:{title:{type:"STRING"},words:{type:"INTEGER"},scene:{type:"STRING"},beat:{type:"STRING"},from:{type:"STRING"}},required:["title","words","scene","beat"]}}},
   required:["title","logline","tone","core","ending","motif","heart","kept","decided","steps"]};
 function plotPrompt(mode,instr){
-  const n=pad(), total=padTotal(), ns=n.nsteps?`정확히 ${n.nsteps}개`:"분량에 맞게 4~7개";
+  const n=pad(), total=padTotal(), auto=Math.max(3,Math.min(40,Math.round(total/1500))), ns=n.nsteps?`정확히 ${n.nsteps}개`:`분량에 맞게 ${auto<=7?"4~7":`${Math.max(4,auto-2)}~${auto+2}`}개`;
   let t=`너는 2차 창작 소설의 플롯 편집자야. 아래 [작가 메모]는 설정·전개 아이디어·원하는 분위기가 뒤섞인 낙서야. 이걸 정제된 플롯과 집필용 단계로 정리해줘.\n\n${planCtx()}[분량] 전체 약 ${total.toLocaleString()}어절\n\n[작가 메모]\n${n.memo.trim()||"(비어 있음 — 작품 설정과 장르로 자유롭게)"}\n\n`;
   if(mode==="plot"&&n.secs.length) t+=`[지금 단계 — 이 단계는 그대로 둘 거야. 플롯만 이 단계에 맞게 다시 다듬어]\n${n.secs.map((s,i)=>`${i+1}. ${s.title}: ${s.scene}`).join("\n")}\n\n`;
   if(mode==="steps"&&n.plot) t+=`[확정된 플롯 — 바꾸지 마. 이 플롯에 맞게 단계만 새로 짜]\n${plotLines(n.plot)}\n\n`;
@@ -813,7 +829,7 @@ async function plotGen(mode,instr,b){
     const clean=v=>String(v||"").trim();
     if(mode!=="steps"||!n.plot){ n.plot={}; ["title","logline",...PLOT_KV.map(x=>x[0])].forEach(k=>n.plot[k]=clean(o[k])); n.plot.kept=(o.kept||[]).map(clean).filter(Boolean).slice(0,10); n.plot.decided=(o.decided||[]).map(clean).filter(Boolean).slice(0,8) }
     if(mode!=="plot"||!n.secs.length){
-      const st=(o.steps||[]).map(x=>({title:clean(x.title).slice(0,20),words:+x.words||0,scene:clean(x.scene),beat:clean(x.beat),from:clean(x.from)})).filter(x=>x.title||x.scene).slice(0,12);
+      const st=(o.steps||[]).map(x=>({title:clean(x.title).slice(0,20),words:+x.words||0,scene:clean(x.scene),beat:clean(x.beat),from:clean(x.from)})).filter(x=>x.title||x.scene).slice(0,200);
       if(!st.length) throw new Error("단계를 만들지 못했어요. 다시 시도해주세요.");
       const total=padTotal(), sum=st.reduce((a,x)=>a+x.words,0);
       n.secs=st.map(x=>newSec({...x,words:r100(sum>0?x.words*total/sum:total/st.length)}));
@@ -839,18 +855,19 @@ function replanSheet(){
     const b=e.target.closest("button"); if(!b||b.disabled) return; const d=b.dataset;
     if(d.x==="close"){ close(); return }
     if(d.fid){ n.fid=d.fid; save(); draw() }
-    if(d.ns!=null){ n.nsteps=+d.ns; save(); draw() }
+    if(d.ns!=null){ n.nsteps=0; save(); draw() }
     if(d.md){ mode=mode===d.md?"all":d.md; draw() }
     if(d.x==="go"){ if(await plotGen(mode,sh.querySelector("#rpI").value.trim(),b)) close() }
   });
   const draw=()=>{ const v=sh.querySelector("#rpI")?.value||"";
     sh.querySelector("#rpB").innerHTML=`<div class="shh"><b>다시 짜기</b><button class="x" data-x="close" aria-label="닫기">${ic("x")}</button></div>
     <div class="shl">메모를</div><div class="segbox">${Object.keys(FID).map(k=>`<button data-fid="${k}" aria-pressed="${n.fid===k}">${k}</button>`).join("")}</div>
-    <div class="shl">단계</div><div class="segbox">${[0,4,5,6,7].map(k=>`<button data-ns="${k}" aria-pressed="${(n.nsteps||0)===k}">${k||"알아서"}</button>`).join("")}</div>
+    <div class="shl">단계 수</div><div class="segbox nsbox"><button data-ns="0" aria-pressed="${!n.nsteps}">알아서</button><label class="nsin ${n.nsteps?"on":""}"><input id="rpN" inputmode="numeric" pattern="[0-9]*" placeholder="직접 입력" value="${n.nsteps||""}" autocomplete="off"><span>개</span></label></div>
     <div class="askrow"><input id="rpI" placeholder="지시" autocomplete="off"></div>
     <div class="chips" style="margin-top:12px"><button class="chip ${mode==="plot"?"on":""}" data-md="plot" ${n.secs.length?"":"disabled"}>플롯만 다시</button><button class="chip ${mode==="steps"?"on":""}" data-md="steps" ${n.plot?"":"disabled"}>단계만 다시</button></div>
     <button class="btnfull" data-x="go" style="margin-top:14px">${ic("redo")}다시 짜기</button>`;
-    const i=sh.querySelector("#rpI"); i.value=v; i.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); sh.querySelector('[data-x="go"]').click() } }) };
+    const i=sh.querySelector("#rpI"); i.value=v; i.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); sh.querySelector('[data-x="go"]').click() } });
+    const ni=sh.querySelector("#rpN"); ni.addEventListener("input",()=>{ ni.value=ni.value.replace(/[^0-9]/g,"").slice(0,3); n.nsteps=Math.min(200,+ni.value||0); save(); sh.querySelector('[data-ns="0"]').setAttribute("aria-pressed",!n.nsteps); ni.parentNode.classList.toggle("on",!!n.nsteps) }) };
   draw();
 }
 function plotSheet(){
@@ -887,7 +904,7 @@ function secSheet(i){
   sc.addEventListener("input",()=>{ s.scene=sc.value; growTA(sc); save() });
   bt.addEventListener("input",()=>{ s.beat=bt.value; save() });
   sh.querySelector("#ssI").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); sh.querySelector('[data-x="ask"]').click() } });
-  w.addEventListener("input",()=>{ w.value=w.value.replace(/[^0-9]/g,"").slice(0,5) });
+  w.addEventListener("input",()=>{ w.value=w.value.replace(/[^0-9]/g,"").slice(0,7) });
   w.addEventListener("change",()=>{ let v=Math.min(WMAX,Math.max(100,+w.value||s.words)); s.words=v; w.value=v; save() });
 }
 
@@ -931,7 +948,7 @@ function vPrefs(){
     <div class="title">설정</div>
     <div class="cap">Gemini</div>
     <div class="row" style="cursor:default"><span>쓰는 방식</span><div class="seg"><button data-act="setmode" data-k="app" aria-pressed="${S.mode==="app"}">앱 붙여넣기</button><button data-act="setmode" data-k="api" aria-pressed="${S.mode==="api"}">API</button></div></div>
-    <button class="row" data-act="gemini"><span>API 연결</span><span style="display:flex;align-items:center;gap:8px"><span class="val">${S.apiKey?esc(S.model?S.model.replace("models/",""):"모델 미선택"):"연결 안 됨"}</span><i class="dot ${S.apiKey&&S.model?"":"off"}"></i>${ic("chev")}</span></button>
+    <button class="row" data-act="gemini"><span>API 연결</span><span style="display:flex;align-items:center;gap:8px"><span class="val">${curKey()?esc((isOR()?"OpenRouter · ":"")+(modelLabel()||"모델 미선택")):"연결 안 됨"}</span><i class="dot ${hasApi()?"":"off"}"></i>${ic("chev")}</span></button>
     <div class="cap">화면</div>
     <div class="row" style="cursor:default"><span>모드</span><div class="seg">${Object.entries(th).map(([k,l])=>`<button data-act="settheme" data-k="${k}" aria-pressed="${S.theme===k}">${l}</button>`).join("")}</div></div>
     <div class="cap">백업</div>
@@ -1012,13 +1029,13 @@ const ACT={
   edsave(){ const ed=stack[stack.length-1]; if(ed.save()!==false){ pop(); toast("저장했어요",1400) } },
   gemini(){ geminiEditor() },
   export(){
-    const blob=new Blob([JSON.stringify({app:"iyagi-gongbang",v:1,data:{...S,apiKey:""}},null,1)],{type:"application/json"});
+    const blob=new Blob([JSON.stringify({app:"iyagi-gongbang",v:1,data:{...S,apiKey:"",orKey:""}},null,1)],{type:"application/json"});
     const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=`이야기_백업_${new Date().toISOString().slice(0,10)}.json`; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),4000);
     toast("API 키는 빼고 저장했어요");
   },
   import(){
     const i=document.createElement("input"); i.type="file"; i.accept=".json,application/json";
-    i.onchange=async()=>{ try{ const j=JSON.parse(await i.files[0].text()); if(j.app!=="iyagi-gongbang") throw 0; const key=S.apiKey,model=S.model; S={...structuredClone(DEFAULTS),...j.data,apiKey:key,model:j.data.model||model}; await store.set(S); applyTheme(); render(); toast(`불러왔어요 · 이야기 ${S.stories.length}편`) }catch(e){ toast("이야기 앱 백업 파일이 아니에요") } };
+    i.onchange=async()=>{ try{ const j=JSON.parse(await i.files[0].text()); if(j.app!=="iyagi-gongbang") throw 0; const key=S.apiKey,model=S.model,ok=S.orKey; S={...structuredClone(DEFAULTS),...j.data,apiKey:key,orKey:ok,model:j.data.model||model}; await store.set(S); applyTheme(); render(); toast(`불러왔어요 · 이야기 ${S.stories.length}편`) }catch(e){ toast("이야기 앱 백업 파일이 아니에요") } };
     i.click();
   },
   generate(){ startNew() }
@@ -1034,10 +1051,16 @@ function tplEditor(t){
   t.isNew?"":`<label style="display:flex;align-items:center;gap:10px;margin-top:22px;font-size:15px"><input type="checkbox" id="f_cont" ${t.cont?"checked":""} style="width:18px;height:18px;accent-color:var(--accent)" onchange="(S.templates.find(x=>x.id==='${t.id}')||{}).cont=this.checked;save()">서재의 이야기에 이어 쓰기</label><button class="danger" data-act="deltpl" data-id="${t.id}">템플릿 삭제</button>`);
 }
 
-/* ───────── Gemini 연결 ───────── */
+/* ───────── API 연결 (Gemini · OpenRouter) ───────── */
 const API="https://generativelanguage.googleapis.com/v1beta";
+const OR_API="https://openrouter.ai/api/v1";
+const isOR=()=>S.provider==="openrouter";
+const curKey=()=>isOR()?S.orKey:S.apiKey;
+const curModel=()=>isOR()?S.orModel:S.model;
+const hasApi=()=>!!(curKey()&&curModel());
+const modelLabel=()=>{ const m=curModel(); return m?(isOR()?m:m.replace("models/","")):"" };
 function cleanKey(v){
-  return {key:v.replace(/[\u200B-\u200D\uFEFF]/g,"").trim()};
+  return {key:v.replace(/[​-‍﻿]/g,"").trim()};
 }
 function apiFetch(url,opts,key){
   opts={...(opts||{})}; opts.headers={...(opts.headers||{})};
@@ -1045,34 +1068,75 @@ function apiFetch(url,opts,key){
   else url+=(url.includes("?")?"&":"?")+"key="+encodeURIComponent(key);
   return fetch(url,opts);
 }
-let modelCache=null;
+function orFetch(path,body,signal,key){
+  return fetch(OR_API+path,{method:"POST",signal,headers:{"Content-Type":"application/json","Authorization":"Bearer "+(key||S.orKey),"HTTP-Referer":location.origin&&location.origin!=="null"?location.origin:"https://iyagi.app","X-Title":"Iyagi"},body:JSON.stringify(body)});
+}
+/* Gemini 형식 요청 → OpenRouter 메시지 */
+function orMessages(body){
+  const m=[]; const sys=(body.systemInstruction?.parts||[]).map(p=>p.text).join("\n"); if(sys) m.push({role:"system",content:sys});
+  for(const c of body.contents||[]) m.push({role:c.role==="model"?"assistant":"user",content:(c.parts||[]).map(p=>p.text||"").join("")});
+  return m;
+}
+let modelCache=null, orCache=null;
 function geminiEditor(){
-  push({title:"Gemini",html:()=>`
-    <div class="field"><label for="f_key">API 키</label><div style="display:flex;align-items:center;gap:8px"><input id="f_key" type="text" lang="ko" inputmode="text" class="keyin masked" value="${esc(S.apiKey)}" placeholder="API 키" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" style="flex:1"><button class="textbtn" type="button" onclick="const k=document.getElementById('f_key');k.classList.toggle('masked');this.textContent=k.classList.contains('masked')?'보기':'숨기기'" style="font-size:14px">보기</button></div>
-      <p class="hint">Google AI Studio(aistudio.google.com)의 Get API key에서 발급해요. 키는 이 기기에만 저장되고 Google 서버로만 전송돼요.</p></div>
-    <div class="field"><label for="f_model">모델</label><select id="f_model">${S.model?`<option value="${esc(S.model)}">${esc(S.model.replace("models/",""))}</option>`:`<option value="">키를 입력한 뒤 불러오기를 눌러주세요</option>`}</select>
+  let prov=S.provider==="openrouter"?"openrouter":"gemini";
+  push({title:"API",html:()=>{
+    const or=prov==="openrouter", key=or?S.orKey:S.apiKey, model=or?S.orModel:S.model;
+    return `<div class="segbox" style="margin:4px 0 22px"><button data-act="prov" data-k="gemini" aria-pressed="${!or}">Gemini</button><button data-act="prov" data-k="openrouter" aria-pressed="${or}">OpenRouter</button></div>
+    <div class="field"><label for="f_key">API 키</label><div style="display:flex;align-items:center;gap:8px"><input id="f_key" type="text" lang="ko" inputmode="text" class="keyin masked" value="${esc(key||"")}" placeholder="${or?"sk-or-…":"API 키"}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" style="flex:1"><button class="textbtn" type="button" onclick="const k=document.getElementById('f_key');k.classList.toggle('masked');this.textContent=k.classList.contains('masked')?'보기':'숨기기'" style="font-size:14px">보기</button></div>
+      <p class="hint">${or?"openrouter.ai › Keys에서 발급해요. 키는 이 기기에만 저장되고 OpenRouter로만 전송돼요.":"Google AI Studio(aistudio.google.com)의 Get API key에서 발급해요. 키는 이 기기에만 저장되고 Google 서버로만 전송돼요."}</p></div>
+    <div class="field"><label for="f_model">모델</label>
+      ${or?`<input id="f_mq" class="line-input" placeholder="모델 검색 (예: claude, gpt, gemini)" autocomplete="off" autocapitalize="off" spellcheck="false" style="margin-bottom:8px">`:""}
+      <select id="f_model">${model?`<option value="${esc(model)}">${esc(or?model:model.replace("models/",""))}</option>`:`<option value="">${or?"불러오기를 눌러주세요":"키를 입력한 뒤 불러오기를 눌러주세요"}</option>`}</select>
       <button class="textbtn" data-act="loadmodels" style="margin-top:6px">모델 목록 불러오기</button></div>
     <div class="field"><label for="f_temp">창의성 <span id="tv" style="color:var(--ink3);font-weight:500">${S.temperature}</span></label><input id="f_temp" type="range" min="0" max="2" step="0.1" value="${S.temperature}" style="accent-color:var(--accent);border:0" oninput="document.getElementById('tv').textContent=this.value">
-      <p class="hint">낮을수록 안정적이고, 높을수록 예측하기 어려운 전개가 나와요.</p></div>`,
-    after:()=>{ if(modelCache) fillModels(modelCache) },
-    save:()=>{ const ck=cleanKey(app.querySelector("#f_key").value); if(ck.err){ toast(ck.err,3600); return false } S.apiKey=ck.key; S.model=app.querySelector("#f_model").value; { const mm=(modelCache||[]).find(m=>m.name===S.model); if(mm?.outputTokenLimit) S.modelOut=mm.outputTokenLimit } S.temperature=+app.querySelector("#f_temp").value; save(); if(S.apiKey&&!S.model){ toast("모델을 골라주세요"); return false } return true }
+      <p class="hint">낮을수록 안정적이고, 높을수록 예측하기 어려운 전개가 나와요.</p></div>`},
+    rebind:true,
+    after:()=>{ const or=prov==="openrouter"; if(or?orCache:modelCache) fillModels(or?orCache:modelCache);
+      app.querySelector("#f_mq")?.addEventListener("input",e=>{ if(orCache) fillModels(orCache,false,e.target.value) }) },
+    save:()=>{ const ck=cleanKey(app.querySelector("#f_key").value); const m=app.querySelector("#f_model").value;
+      S.provider=prov; S.temperature=+app.querySelector("#f_temp").value;
+      if(prov==="openrouter"){ S.orKey=ck.key; S.orModel=m; const mm=(orCache||[]).find(x=>x.id===m); if(mm) S.orOut=mm.top_provider?.max_completion_tokens||0 }
+      else { S.apiKey=ck.key; S.model=m; const mm=(modelCache||[]).find(x=>x.name===m); if(mm?.outputTokenLimit) S.modelOut=mm.outputTokenLimit }
+      save(); if(ck.key&&!m){ toast("모델을 골라주세요"); return false } return true },
+    setProv(k){ if(k===prov) return; const kv=app.querySelector("#f_key")?.value; prov=k; render(); }
   });
 }
+ACT.prov=(d)=>{ const ed=stack[stack.length-1]; if(ed?.setProv) ed.setProv(d.k) };
 ACT.loadmodels=async(d,b)=>{
-  const ck=cleanKey(app.querySelector("#f_key").value); if(ck.err){ toast(ck.err,3600); return } const key=ck.key; app.querySelector("#f_key").value=key; if(!key){ toast("API 키를 먼저 입력해주세요"); return }
+  const or=!!app.querySelector("#f_mq");
+  const ck=cleanKey(app.querySelector("#f_key").value); const key=ck.key; app.querySelector("#f_key").value=key;
+  if(!or&&!key){ toast("API 키를 먼저 입력해주세요"); return }
   b.textContent="불러오는 중…"; b.disabled=true;
   try{
-    const r=await apiFetch(`${API}/models?pageSize=1000`,{},key);
-    const j=await r.json(); if(!r.ok) throw new Error(j.error?.message||r.status);
-    modelCache=(j.models||[]).filter(m=>(m.supportedGenerationMethods||[]).includes("generateContent")&&/gemini/i.test(m.name)&&!/(embed|tts|image|audio|live|vision|aqa|robotics|computer)/i.test(m.name));
-    const ver=n=>{const m=n.match(/gemini-(\d+(?:\.\d+)?)/);return m?parseFloat(m[1]):0};
-    modelCache.sort((a,b)=>ver(b.name)-ver(a.name)||(/pro/.test(b.name)-/pro/.test(a.name))||a.name.localeCompare(b.name));
-    fillModels(modelCache,true); b.textContent=`${modelCache.length}개 불러왔어요`;
-  }catch(e){ b.textContent="모델 목록 불러오기"; toast(/API key|API_KEY|permission|400|403/i.test(e.message)?"API 키가 맞지 않아요. AI Studio에서 키를 다시 확인해주세요.":"불러오지 못했어요: "+e.message,4200) }
+    if(or){
+      const r=await fetch(`${OR_API}/models`); const j=await r.json(); if(!r.ok) throw new Error(j.error?.message||r.status);
+      orCache=(j.data||[]).filter(m=>(m.architecture?.output_modalities||["text"]).includes("text")&&!/embed|tts|whisper|image-gen/i.test(m.id));
+      orCache.sort((a,b)=>(b.created||0)-(a.created||0));
+      fillModels(orCache,true,app.querySelector("#f_mq").value); b.textContent=`${orCache.length}개 불러왔어요`;
+    } else {
+      const r=await apiFetch(`${API}/models?pageSize=1000`,{},key);
+      const j=await r.json(); if(!r.ok) throw new Error(j.error?.message||r.status);
+      modelCache=(j.models||[]).filter(m=>(m.supportedGenerationMethods||[]).includes("generateContent")&&/gemini/i.test(m.name)&&!/(embed|tts|image|audio|live|vision|aqa|robotics|computer)/i.test(m.name));
+      const ver=n=>{const m=n.match(/gemini-(\d+(?:\.\d+)?)/);return m?parseFloat(m[1]):0};
+      modelCache.sort((a,b)=>ver(b.name)-ver(a.name)||(/pro/.test(b.name)-/pro/.test(a.name))||a.name.localeCompare(b.name));
+      fillModels(modelCache,true); b.textContent=`${modelCache.length}개 불러왔어요`;
+    }
+  }catch(e){ b.textContent="모델 목록 불러오기"; toast(!or&&/API key|API_KEY|permission|400|403/i.test(e.message)?"API 키가 맞지 않아요. AI Studio에서 키를 다시 확인해주세요.":"불러오지 못했어요: "+e.message,4200) }
   b.disabled=false;
 };
-function fillModels(list,pick){
-  const sel=app.querySelector("#f_model"); if(!sel) return; const cur=sel.value||S.model;
+function fillModels(list,pick,q){
+  const sel=app.querySelector("#f_model"); if(!sel) return; const or=!!app.querySelector("#f_mq");
+  const cur=sel.value||(or?S.orModel:S.model);
+  if(or){
+    const qs=(q||"").toLowerCase().split(/\s+/).filter(Boolean);
+    let ls=list.filter(m=>qs.every(t=>(m.id+" "+(m.name||"")).toLowerCase().includes(t)));
+    const curM=list.find(m=>m.id===cur); if(curM&&!ls.includes(curM)) ls=[curM,...ls];
+    const price=m=>{ const p=+m.pricing?.completion; return p>0?` · $${(p*1e6).toFixed(p*1e6<1?2:1)}/M`:p===0?" · 무료":"" };
+    sel.innerHTML=ls.slice(0,300).map(m=>`<option value="${esc(m.id)}">${esc(m.name||m.id)}${price(m)}</option>`).join("")||`<option value="">검색 결과 없음</option>`;
+    if(ls.some(m=>m.id===cur)) sel.value=cur;
+    return;
+  }
   sel.innerHTML=list.map(m=>`<option value="${m.name}">${esc(m.displayName||m.name)} · ${esc(m.name.replace("models/",""))}</option>`).join("");
   if(list.some(m=>m.name===cur)) sel.value=cur;
   else if(pick){ const p=list.find(m=>/pro/i.test(m.name)&&!/(preview|exp)/i.test(m.name))||list.find(m=>/pro/i.test(m.name))||list[0]; if(p) sel.value=p.name }
@@ -1192,25 +1256,44 @@ function joinParts(a,b){
   if(!a.trim()) return b;
   return /[.!?…"”'’」』)\]~\n]\s*$/.test(a)?a.replace(/\s+$/,"")+"\n\n"+b.replace(/^\s+/,""):a+b.replace(/^\s+/,"");
 }
-async function streamOnce(body,ctrl,onText){
-  const r=await apiFetch(`${API}/${S.model}:streamGenerateContent?alt=sse`,{method:"POST",signal:ctrl.signal,headers:{"Content-Type":"application/json"},body:JSON.stringify(body)},S.apiKey);
-  if(!r.ok){ let m=""; try{ m=(await r.json()).error?.message||"" }catch(_){} const e=new Error(apiErr(r.status,m)); e.status=r.status; e.raw=m; throw e }
-  const rd=r.body.getReader(), dec=new TextDecoder(); let buf="", block=null, finish=null, out="";
+async function readSSE(r,onData){
+  const rd=r.body.getReader(), dec=new TextDecoder(); let buf="";
   while(true){
     const {value,done}=await rd.read(); if(done) break;
     buf+=dec.decode(value,{stream:true});
     let i; while((i=buf.indexOf("\n"))>=0){
       const line=buf.slice(0,i).trim(); buf=buf.slice(i+1);
-      if(!line.startsWith("data:")) continue;
-      let j; try{ j=JSON.parse(line.slice(5)) }catch(_){ continue }
-      if(j.promptFeedback?.blockReason) block=j.promptFeedback.blockReason;
-      const c=j.candidates?.[0]; if(c?.finishReason) finish=c.finishReason;
-      for(const part of c?.content?.parts||[]) if(part.text&&!part.thought){ out+=part.text; onText(out) }
+      if(!line.startsWith("data:")) continue; const d=line.slice(5).trim(); if(d==="[DONE]") continue;
+      let j; try{ j=JSON.parse(d) }catch(_){ continue } onData(j);
     }
   }
+}
+async function streamOnce(body,ctrl,onText){
+  let block=null, finish=null, out="";
+  if(isOR()){
+    const g=body.generationConfig||{}, mo=g.maxOutputTokens;
+    const r=await orFetch("/chat/completions",{model:S.orModel,messages:orMessages(body),stream:true,temperature:g.temperature,...(mo?{max_tokens:mo}:{})},ctrl.signal);
+    if(!r.ok){ let m=""; try{ m=(await r.json()).error?.message||"" }catch(_){} const e=new Error(apiErr(r.status,m)); e.status=r.status; e.raw=m; throw e }
+    let err=null;
+    await readSSE(r,j=>{
+      if(j.error){ err=j.error; return }
+      const c=j.choices?.[0]; if(!c) return;
+      if(c.finish_reason) finish={stop:"STOP",length:"MAX_TOKENS",content_filter:"SAFETY"}[c.finish_reason]||c.finish_reason.toUpperCase();
+      const t=c.delta?.content; if(t){ out+=t; onText(out) }
+    });
+    if(err&&!out){ const e=new Error(apiErr(err.code||500,err.message||"")); e.status=err.code; e.raw=err.message; throw e }
+    return {out,finish,block};
+  }
+  const r=await apiFetch(`${API}/${S.model}:streamGenerateContent?alt=sse`,{method:"POST",signal:ctrl.signal,headers:{"Content-Type":"application/json"},body:JSON.stringify(body)},S.apiKey);
+  if(!r.ok){ let m=""; try{ m=(await r.json()).error?.message||"" }catch(_){} const e=new Error(apiErr(r.status,m)); e.status=r.status; e.raw=m; throw e }
+  await readSSE(r,j=>{
+    if(j.promptFeedback?.blockReason) block=j.promptFeedback.blockReason;
+    const c=j.candidates?.[0]; if(c?.finishReason) finish=c.finishReason;
+    for(const part of c?.content?.parts||[]) if(part.text&&!part.thought){ out+=part.text; onText(out) }
+  });
   return {out,finish,block};
 }
-function needApi(msg){ if(S.apiKey&&S.model) return true; toast(msg||"설정에서 Gemini API 키와 모델을 먼저 연결해주세요",3200); return false }
+function needApi(msg){ if(hasApi()) return true; toast(msg||"설정 › API 연결에서 키와 모델을 먼저 넣어주세요",3200); return false }
 function startNew(raw){
   const p=buildPrompt({oneShot:S.mode==="app",raw}); if(p.error){ toast(p.error); return }
   if(!p.write.length){ toast("쓸 단계를 체크해주세요"); return }
@@ -1222,12 +1305,12 @@ function startMore(s,idxs){
   if(S.mode==="app") sendToApp(p,dest); else runGen(p,dest);
 }
 async function runGen(p,dest){
-  if(!S.apiKey||!S.model){ toast("설정에서 Gemini API 키와 모델을 먼저 연결해주세요",3200); tab="prefs"; stack=[]; render(); setTimeout(geminiEditor,50); return }
+  if(!hasApi()){ toast("설정 › API 연결에서 키와 모델을 먼저 넣어주세요",3200); tab="prefs"; stack=[]; render(); setTimeout(geminiEditor,50); return }
   const ctrl=new AbortController(), multi=p.split||(!p.chunks&&p.target>CHUNK*1.3);
   gen={ctrl,text:"",p,dest,target:p.target,round:1,extra:"",multi};
   openLive(multi);
-  let maxOut=Math.min(S.modelOut||65536,65536);
-  const maxRounds=Math.min(15,Math.ceil(p.target/CHUNK)+3);
+  let maxOut=isOR()?Math.min(S.orOut||32000,65536):Math.min(S.modelOut||65536,65536);
+  const maxRounds=Math.min(300,Math.ceil(p.target/CHUNK)+3);
   let note=null;
   try{
     S.primeCache ||= {};
@@ -1249,11 +1332,11 @@ async function runGen(p,dest){
       try{
         res=await streamOnce({systemInstruction:{parts:[{text:SYS_SHORT}]},contents,generationConfig:{temperature:S.temperature,maxOutputTokens:maxOut}},ctrl,out=>{ gen.text=round===1?out:joinParts(base,out); updateLive() });
       }catch(e){
-        if(e.status===400&&/max.?output.?tokens|maxOutputTokens/i.test(e.raw||"")&&maxOut>8192){ maxOut=8192; round--; continue }
+        if(e.status===400&&/max.?output.?tokens|maxOutputTokens|max_tokens|context length|maximum context/i.test(e.raw||"")&&maxOut>8192){ maxOut=8192; round--; continue }
         throw e;
       }
       if(!res.out.trim()){
-        if(round===1) throw new Error(res.block?"요청이 Gemini 안전 정책에 걸려 거절됐어요. 표현을 바꿔 다시 시도해주세요.":(res.finish==="SAFETY"||res.finish==="PROHIBITED_CONTENT")?"Gemini가 안전 정책 때문에 쓰기를 멈췄어요. 표현을 바꿔 다시 시도해주세요.":"Gemini가 빈 답을 보냈어요. 다시 시도해주세요.");
+        if(round===1) throw new Error(res.block?"요청이 안전 정책에 걸려 거절됐어요. 표현을 바꿔 다시 시도해주세요.":(res.finish==="SAFETY"||res.finish==="PROHIBITED_CONTENT")?"모델이 안전 정책 때문에 쓰기를 멈췄어요. 표현을 바꿔 다시 시도해주세요.":"모델이 빈 답을 보냈어요. 다시 시도해주세요.");
         break;
       }
       if(res.finish==="SAFETY"||res.finish==="PROHIBITED_CONTENT"){ note="안전 정책 때문에 중간에 멈췄어요"; break }
@@ -1273,6 +1356,16 @@ async function runGen(p,dest){
   }
 }
 function apiErr(st,m){
+  if(isOR()){
+    if(st===401) return "OpenRouter API 키가 맞지 않아요. 설정에서 다시 확인해주세요.";
+    if(st===402) return "OpenRouter 크레딧이 부족해요. openrouter.ai에서 충전하거나 무료 모델을 골라주세요.";
+    if(st===403) return `모델이 요청을 거절했어요(검열). 표현을 바꿔 다시 시도해주세요. ${m}`.trim();
+    if(st===404) return "모델을 찾을 수 없어요. 설정에서 모델을 다시 골라주세요.";
+    if(st===408) return "응답이 너무 오래 걸렸어요. 다시 시도해주세요.";
+    if(st===429) return "요청 한도를 넘었어요. 잠시 뒤 다시 시도하거나 다른 모델을 골라주세요.";
+    if(st>=500) return "모델 서버가 응답하지 않아요. 잠시 뒤 다시 시도하거나 다른 모델을 골라주세요.";
+    return `OpenRouter 오류(${st}) ${m}`.trim();
+  }
   if(st===400&&/API key/i.test(m)) return "API 키가 맞지 않아요. 설정에서 다시 확인해주세요.";
   if(st===403) return "이 API 키로는 해당 모델을 쓸 수 없어요. 설정에서 다른 모델을 골라주세요.";
   if(st===404) return "모델을 찾을 수 없어요. 설정에서 모델 목록을 다시 불러와주세요.";
@@ -1337,7 +1430,7 @@ function readerVars(el){
 function openLive(multi){
   closeLive();
   const el=document.createElement("div"); el.className="reader"; el.id="liveReader"; readerVars(el);
-  el.innerHTML=`<div class="writing"><i></i><span class="wlabel">Gemini가 쓰는 중</span><span class="wcount"></span></div><div class="live" id="liveText"></div>
+  el.innerHTML=`<div class="writing"><i></i><span class="wlabel">쓰는 중</span><span class="wcount"></span></div><div class="live" id="liveText"></div>
     <div class="livebar"><div class="chips"><button class="chip on" id="stopGen">${ic("stop")}멈추기</button>${multi?`<button class="chip" data-ex="지금 쓰는 단계를 더 길고 촘촘하게 써줘.">이 단계 더 길게</button><button class="chip" data-ex="대사 비중을 늘려줘.">대사 늘리기</button>`:""}</div>
     ${multi?`<div class="askrow"><input id="liveIns" placeholder="다음 회차에 반영할 지시" autocomplete="off"><button id="liveSend" aria-label="보내기">${ic("send")}</button></div>`:""}</div>`;
   document.body.appendChild(el);
@@ -1356,7 +1449,7 @@ function updateLive(){
     const more=gen.dest?.kind==="more";
     const {title,body}=more?{title:"",body:gen.text}:titleOf(gen.text.includes("\n")?gen.text:gen.text+"\n",gen.p?.write||[]);
     box.innerHTML=(title?`<p class="ttl">${esc(title)}</p>`:"")+bodyHTML(body);
-    const wl=document.querySelector("#liveReader .wlabel"); if(wl) wl.textContent=gen.phase==="prime"?"Gemini가 설정을 읽는 중":"Gemini가 쓰는 중";
+    const wl=document.querySelector("#liveReader .wlabel"); if(wl) wl.textContent=gen.phase==="prime"?"설정을 읽는 중":"쓰는 중";
     const wr=document.querySelector("#liveReader .wcount"); if(wr&&gen.phase==="prime"){ wr.textContent=""; return } if(wr&&gen.target) wr.textContent=` · ${wordCount(gen.text).toLocaleString()} / ${gen.target.toLocaleString()}어절${gen.steps?` · ${Math.min(gen.round,gen.steps)}/${gen.steps}회차`:(gen.round>1?` · ${gen.round}번째 이어 쓰는 중`:"")}`;
   });
 }
@@ -1477,7 +1570,7 @@ document.addEventListener("selectionchange",()=>{
   if(!R||!R.edit) return; const f=R.el.querySelector(".rflow"), bar=R.el.querySelector(".rsel"); if(!f) return;
   const sel=getSelection();
   if(sel&&sel.rangeCount&&!sel.isCollapsed&&f.contains(sel.anchorNode)&&f.contains(sel.focusNode)){
-    const t=sel.toString(); if(t.trim()){ R.sel={text:t,range:sel.getRangeAt(0).cloneRange()}; bar.hidden=!(S.mode==="api"&&S.apiKey&&S.model) } }
+    const t=sel.toString(); if(t.trim()){ R.sel={text:t,range:sel.getRangeAt(0).cloneRange()}; bar.hidden=!(S.mode==="api"&&hasApi()) } }
   else if(!document.querySelector(".scrim")) bar.hidden=true;
   clearTimeout(R.ft); R.ft=setTimeout(rdFoot,120);
 });
@@ -1598,7 +1691,7 @@ function readerSheet(){
     <div class="slider"><span class="s">≡</span><input type="range" id="rlh" min="1.5" max="2.4" step="0.1" value="${r.lh}" aria-label="줄 간격"><span class="l">≡</span></div>
     <div class="slider"><span class="s ico">${ic("padn",18)}</span><input type="range" id="rpd" min="12" max="56" step="2" value="${pad0}" aria-label="옆 여백"><span class="l ico">${ic("padw",18)}</span></div>
     <div class="slider"><span class="s" style="letter-spacing:-1.5px;width:30px;white-space:nowrap;font-size:13px">가나</span><input type="range" id="rls" min="-0.06" max="0.12" step="0.01" value="${r.ls||0}" aria-label="자간"><span class="l" style="font-size:13px;letter-spacing:3px;width:30px;white-space:nowrap">가나</span></div>
-    <div class="acts"><button class="textbtn" data-x="cont">다음 편</button><button class="textbtn" data-x="info">정보</button><button class="textbtn" data-x="revise">퇴고</button><button class="textbtn" data-x="del" style="color:var(--danger)">삭제</button></div></div>`,
+    <div class="acts"><button class="textbtn" data-x="cont">다음 편</button><button class="textbtn" data-x="info">정보</button><button class="textbtn" data-x="revise">퇴고</button><button class="textbtn" data-x="export">내보내기</button><button class="textbtn" data-x="del" style="color:var(--danger)">삭제</button></div></div>`,
     (e,close)=>{
       const b=e.target.closest("button"); if(!b) return;
       if(b.dataset.bg){ r.bg=b.dataset.bg; s.querySelectorAll(".sw").forEach(x=>x.setAttribute("aria-checked",x===b)); save(); layoutReader(false) }
@@ -1608,6 +1701,7 @@ function readerSheet(){
       if(b.dataset.x==="cont"){ const id=R.story.id; close(); closeReader(); startCont(id) }
       if(b.dataset.x==="info"){ const id=R.story.id; close(); closeReader(); storyInfo(id) }
       if(b.dataset.x==="revise"){ const id=R.story.id; close(); rdFlush(true); reviseSheet(id) }
+      if(b.dataset.x==="export"){ const id=R.story.id; close(); exportSheet(id) }
       if(b.dataset.x==="del"){ if(b.dataset.armed!=="1"){ b.dataset.armed="1"; b.textContent="한 번 더 누르면 삭제"; return }
         const id=R.story.id; R.edit=false; S.stories=S.stories.filter(x=>x.id!==id); if(S.lastRead===id) S.lastRead=null; save(); close(); closeReader(); toast("삭제했어요") }
     });
@@ -1627,12 +1721,119 @@ function endSheet(){
 function startCont(id){
   S.contStory=id; S.noteView="memo"; const st=S.stories.find(x=>x.id===id); if(st?.workId) S.activeWork=st.workId; save(); tab="write"; render();
 }
+/* ───────── 내보내기 (docx · md · epub · txt) ───────── */
+const CRC_T=(()=>{ const t=new Uint32Array(256); for(let n=0;n<256;n++){ let c=n; for(let k=0;k<8;k++) c=c&1?0xEDB88320^(c>>>1):c>>>1; t[n]=c>>>0 } return t })();
+function crc32(b){ let c=0xFFFFFFFF; for(let i=0;i<b.length;i++) c=CRC_T[(c^b[i])&0xFF]^(c>>>8); return (c^0xFFFFFFFF)>>>0 }
+function makeZip(files){ // [{name, data(string|Uint8Array)}] 무압축
+  const enc=new TextEncoder(), parts=[], central=[]; let off=0;
+  const d=new Date(), dt=((d.getHours()<<11)|(d.getMinutes()<<5)|(d.getSeconds()>>1))&0xFFFF, dd=(((d.getFullYear()-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate())&0xFFFF;
+  for(const f of files){
+    const name=enc.encode(f.name), data=typeof f.data==="string"?enc.encode(f.data):f.data, crc=crc32(data);
+    const h=new DataView(new ArrayBuffer(30));
+    h.setUint32(0,0x04034b50,true); h.setUint16(4,20,true); h.setUint16(6,0x0800,true); h.setUint16(8,0,true); h.setUint16(10,dt,true); h.setUint16(12,dd,true);
+    h.setUint32(14,crc,true); h.setUint32(18,data.length,true); h.setUint32(22,data.length,true); h.setUint16(26,name.length,true); h.setUint16(28,0,true);
+    parts.push(new Uint8Array(h.buffer),name,data);
+    const c=new DataView(new ArrayBuffer(46));
+    c.setUint32(0,0x02014b50,true); c.setUint16(4,20,true); c.setUint16(6,20,true); c.setUint16(8,0x0800,true); c.setUint16(10,0,true); c.setUint16(12,dt,true); c.setUint16(14,dd,true);
+    c.setUint32(16,crc,true); c.setUint32(20,data.length,true); c.setUint32(24,data.length,true); c.setUint16(28,name.length,true); c.setUint32(42,off,true);
+    central.push(new Uint8Array(c.buffer),name);
+    off+=30+name.length+data.length;
+  }
+  const csize=central.reduce((a,x)=>a+x.length,0), e=new DataView(new ArrayBuffer(22));
+  e.setUint32(0,0x06054b50,true); e.setUint16(8,files.length,true); e.setUint16(10,files.length,true); e.setUint32(12,csize,true); e.setUint32(16,off,true);
+  return new Blob([...parts,...central,new Uint8Array(e.buffer)]);
+}
+const xesc=t=>String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,"");
+/* 이야기 → [{title, paras:[{t,k}]}] 장 목록. k: p|brk */
+function storyChapters(s,heads){
+  ensureSecs(s); const out=[]; let cur=null;
+  for(const raw of (s.text||"").replace(/\r/g,"").split(/\n+/)){
+    const l=raw.trim(); if(!l) continue;
+    const m=l.match(/^#{1,4}\s*(\d{1,2})\s*[.)]?\s*(.*)$/);
+    if(m){ cur={title:heads?`${m[1]}. ${m[2].replace(/[*_]/g,"").trim()}`.trim():"",paras:[]}; out.push(cur); continue }
+    if(!cur){ cur={title:"",paras:[]}; out.push(cur) }
+    if(/^(\*\s*){3,}$|^[＊*]{1,3}$|^-{3,}$|^◇+$/.test(l)) cur.paras.push({k:"brk",t:"* * *"});
+    else cur.paras.push({k:"p",t:l.replace(/\*\*(.+?)\*\*/g,"$1")});
+  }
+  return out.filter(c=>c.paras.length||c.title);
+}
+const fileName=(s,ext)=>(s.title||"이야기").replace(/[\\/:*?"<>|\n\r]+/g," ").trim().slice(0,60)+"."+ext;
+function exportTXT(s,heads){
+  const ch=storyChapters(s,heads);
+  return new Blob([[s.title,"",...ch.flatMap(c=>[...(c.title?["",c.title,""]:[]),...c.paras.map(p=>p.k==="brk"?"\n* * *\n":p.t)])].join("\n").replace(/\n{3,}/g,"\n\n")+"\n"],{type:"text/plain;charset=utf-8"});
+}
+function exportMD(s,heads){
+  const ch=storyChapters(s,heads);
+  return new Blob([`# ${s.title}\n\n`+ch.map(c=>(c.title?`## ${c.title}\n\n`:"")+c.paras.map(p=>p.k==="brk"?"* * *":p.t).join("\n\n")).join("\n\n")+"\n"],{type:"text/markdown;charset=utf-8"});
+}
+function exportDOCX(s,heads){
+  const ch=storyChapters(s,heads);
+  const P=(t,st)=>`<w:p><w:pPr><w:pStyle w:val="${st}"/></w:pPr><w:r><w:t xml:space="preserve">${xesc(t)}</w:t></w:r></w:p>`;
+  const body=P(s.title,"Title")+ch.map(c=>(c.title?P(c.title,"Heading1"):"")+c.paras.map(p=>P(p.t,p.k==="brk"?"Break":"Body")).join("")).join("");
+  const W='xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"';
+  const doc=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ${W}><w:body>${body}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1701" w:right="1440" w:bottom="1701" w:left="1440" w:header="851" w:footer="992" w:gutter="0"/></w:sectPr></w:body></w:document>`;
+  const font=`<w:rFonts w:ascii="Batang" w:hAnsi="Batang" w:eastAsia="바탕" w:cs="Batang"/>`;
+  const styles=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles ${W}>
+<w:docDefaults><w:rPrDefault><w:rPr>${font}<w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="ko-KR" w:eastAsia="ko-KR"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="0" w:line="384" w:lineRule="auto"/><w:jc w:val="both"/></w:pPr></w:pPrDefault></w:docDefaults>
+<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style>
+<w:style w:type="paragraph" w:styleId="Body"><w:name w:val="Body Text"/><w:basedOn w:val="Normal"/><w:pPr><w:spacing w:after="80"/><w:ind w:firstLine="220"/></w:pPr></w:style>
+<w:style w:type="paragraph" w:styleId="Title"><w:name w:val="Title"/><w:basedOn w:val="Normal"/><w:pPr><w:jc w:val="center"/><w:spacing w:before="600" w:after="600"/></w:pPr><w:rPr><w:b/><w:sz w:val="36"/><w:szCs w:val="36"/></w:rPr></w:style>
+<w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:basedOn w:val="Normal"/><w:pPr><w:keepNext/><w:spacing w:before="480" w:after="240"/><w:jc w:val="left"/><w:outlineLvl w:val="0"/></w:pPr><w:rPr><w:b/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr></w:style>
+<w:style w:type="paragraph" w:styleId="Break"><w:name w:val="Scene Break"/><w:basedOn w:val="Normal"/><w:pPr><w:jc w:val="center"/><w:spacing w:before="200" w:after="200"/></w:pPr></w:style>
+</w:styles>`;
+  return makeZip([
+    {name:"[Content_Types].xml",data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>`},
+    {name:"_rels/.rels",data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`},
+    {name:"word/_rels/document.xml.rels",data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`},
+    {name:"word/document.xml",data:doc},
+    {name:"word/styles.xml",data:styles}
+  ]).slice(0,undefined,"application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+}
+function exportEPUB(s,heads){
+  const ch=storyChapters(s,heads), id="urn:uuid:"+(s.id||uid())+"-iyagi", now=new Date().toISOString().replace(/\.\d+Z$/,"Z");
+  const xh=(title,inner)=>`<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE html>\n<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="ko" lang="ko"><head><meta charset="UTF-8"/><title>${xesc(title)}</title><link rel="stylesheet" type="text/css" href="style.css"/></head><body>${inner}</body></html>`;
+  const chs=ch.map((c,i)=>({file:`c${i+1}.xhtml`,title:c.title||(i===0?s.title:`${i+1}`),html:xh(c.title||s.title,(i===0?`<h1 class="title">${xesc(s.title)}</h1>`:"")+(c.title?`<h2>${xesc(c.title)}</h2>`:"")+c.paras.map(p=>p.k==="brk"?`<p class="brk">* * *</p>`:`<p>${xesc(p.t)}</p>`).join(""))}));
+  if(!chs.length) chs.push({file:"c1.xhtml",title:s.title,html:xh(s.title,`<h1 class="title">${xesc(s.title)}</h1>`)});
+  const nav=xh("목차",`<nav epub:type="toc" id="toc"><h1>목차</h1><ol>${chs.map(c=>`<li><a href="${c.file}">${xesc(c.title)}</a></li>`).join("")}</ol></nav>`);
+  const css=`body{font-family:serif;line-height:1.85;margin:0 5%;word-break:keep-all}p{text-indent:1em;margin:0 0 .5em}h1.title{text-align:center;font-size:1.5em;margin:3em 0 2em}h2{font-size:1em;margin:2.5em 0 1.2em}p.brk{text-align:center;text-indent:0;margin:1.2em 0}`;
+  const opf=`<?xml version="1.0" encoding="UTF-8"?><package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="bid" xml:lang="ko"><metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:identifier id="bid">${xesc(id)}</dc:identifier><dc:title>${xesc(s.title)}</dc:title><dc:language>ko</dc:language>${s.genre?`<dc:subject>${xesc(s.genre)}</dc:subject>`:""}${s.summary?`<dc:description>${xesc(s.summary)}</dc:description>`:""}<meta property="dcterms:modified">${now}</meta></metadata><manifest><item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/><item id="css" href="style.css" media-type="text/css"/>${chs.map((c,i)=>`<item id="c${i+1}" href="${c.file}" media-type="application/xhtml+xml"/>`).join("")}</manifest><spine>${chs.map((c,i)=>`<itemref idref="c${i+1}"/>`).join("")}</spine></package>`;
+  return makeZip([
+    {name:"mimetype",data:"application/epub+zip"},
+    {name:"META-INF/container.xml",data:`<?xml version="1.0" encoding="UTF-8"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>`},
+    {name:"OEBPS/content.opf",data:opf},{name:"OEBPS/nav.xhtml",data:nav},{name:"OEBPS/style.css",data:css},
+    ...chs.map(c=>({name:"OEBPS/"+c.file,data:c.html}))
+  ]).slice(0,undefined,"application/epub+zip");
+}
+async function deliverFile(blob,name){
+  const file=new File([blob],name,{type:blob.type||"application/octet-stream"});
+  if(navigator.canShare&&navigator.share){ try{ if(navigator.canShare({files:[file]})){ await navigator.share({files:[file],title:name}); return } }catch(e){ if(e.name==="AbortError") return } }
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove() },5000);
+}
+function exportSheet(id){
+  const s=S.stories.find(x=>x.id===id); if(!s) return; if(R&&R.story.id===id) rdFlush(true);
+  let heads=S.exportHeads!==false;
+  const F=[["docx","Word","docx"],["epub","EPUB","epub"],["md","Markdown","md"],["txt","텍스트","txt"]];
+  const sh=sheet(`<div class="shh"><b>내보내기</b><button class="x" data-x="close" aria-label="닫기">${ic("x")}</button></div>
+    <div class="exlist">${F.map(([k,l,e])=>`<button class="exrow" data-f="${k}"><span>${l}</span><span class="ext">.${e}</span>${ic("chev")}</button>`).join("")}</div>
+    <button class="chip ${heads?"on":""}" data-x="heads" style="margin-top:16px">${ic("check")}단계 제목 넣기</button>`,
+    (e,close)=>{
+      const b=e.target.closest("button"); if(!b) return;
+      if(b.dataset.x==="close"){ close(); return }
+      if(b.dataset.x==="heads"){ heads=!heads; S.exportHeads=heads; save(); b.classList.toggle("on",heads); return }
+      const f=b.dataset.f; if(!f) return;
+      try{
+        const blob=f==="docx"?exportDOCX(s,heads):f==="epub"?exportEPUB(s,heads):f==="md"?exportMD(s,heads):exportTXT(s,heads);
+        deliverFile(blob,fileName(s,f));
+      }catch(err){ toast("파일을 만들지 못했어요: "+err.message,3600) }
+    });
+}
 /* ───────── 랜덤 채우기 (API) ───────── */
 const CHAR_KEY=/(인물|등장인물|주연|커플|캐릭터)/;
 let randBusy=false;
 async function randomFill(b,keywords){
   if(randBusy) return;
-  if(!needApi("랜덤은 Gemini API를 써요. 설정 › API 연결에서 키와 모델을 넣어주세요")) return;
+  if(!needApi("랜덤은 API를 써요. 설정 › API 연결에서 키와 모델을 넣어주세요")) return;
   const n=pad();
   let ctx=`2차 창작 소설 아이디어를 작가가 휴대폰 메모장에 대충 적어 둔 것처럼 써줘. 뻔하지 않고 구체적으로, 매번 다르게.\n\n${planCtx()}`;
   if(keywords) ctx+=`[핵심 키워드] ${keywords}\n이 키워드들을 이야기의 중심 소재로 삼아. 키워드를 그대로 나열하지 말고 이야기로 엮어.\n\n`;
@@ -1649,16 +1850,42 @@ async function randomFill(b,keywords){
 
 /* ───────── AI(JSON) 도우미 ───────── */
 const ARR=(props,req)=>({type:"ARRAY",items:{type:"OBJECT",properties:props,required:req}});
+function toJSONSchema(s){
+  if(!s||typeof s!=="object") return s;
+  const o={}; for(const [k,v] of Object.entries(s)){
+    if(k==="type") o.type=String(v).toLowerCase();
+    else if(k==="properties") o.properties=Object.fromEntries(Object.entries(v).map(([a,b])=>[a,toJSONSchema(b)]));
+    else if(k==="items") o.items=toJSONSchema(v);
+    else o[k]=v;
+  }
+  if(o.type==="object") o.additionalProperties=false;
+  return o;
+}
+function parseJSONText(txt){
+  txt=(txt||"").replace(/^\s*```(json)?|```\s*$/g,"").trim();
+  try{ return JSON.parse(txt) }catch(_){}
+  const a=txt.indexOf("{"), b=txt.lastIndexOf("}");
+  if(a>=0&&b>a){ try{ return JSON.parse(txt.slice(a,b+1)) }catch(_){} }
+  throw new Error("결과를 읽지 못했어요. 다시 시도해주세요.");
+}
 async function aiJSON(prompt,schema,o){
   o=o||{};
-  if(!S.apiKey||!S.model){ toast("Gemini API 연결이 필요해요. 설정 › API 연결에서 키와 모델을 넣어주세요",3400); throw Object.assign(new Error(""),{silent:true}) }
+  if(!hasApi()){ toast("API 연결이 필요해요. 설정 › API 연결에서 키와 모델을 넣어주세요",3400); throw Object.assign(new Error(""),{silent:true}) }
+  if(isOR()){
+    const js=toJSONSchema(schema);
+    const p=prompt+`\n\n[출력] 설명이나 코드 블록 없이 아래 JSON 스키마에 맞는 JSON 하나만 출력해.\n${JSON.stringify(js)}`;
+    const body=rf=>({model:S.orModel,messages:[{role:"user",content:p}],temperature:o.temp??0.9,...(rf?{response_format:{type:"json_schema",json_schema:{name:"result",strict:false,schema:js}}}:{})});
+    let r=await orFetch("/chat/completions",body(true),o.signal), j=await r.json().catch(()=>({}));
+    if(!r.ok&&(r.status===400||r.status===404)&&/response_format|json|schema|structured|support/i.test(j.error?.message||"")){ r=await orFetch("/chat/completions",body(false),o.signal); j=await r.json().catch(()=>({})) }
+    if(!r.ok||j.error) throw new Error(apiErr(r.ok?(j.error?.code||500):r.status,j.error?.message||""));
+    return parseJSONText(j.choices?.[0]?.message?.content||"");
+  }
   const r=await apiFetch(`${API}/${S.model}:generateContent`,{method:"POST",signal:o.signal,headers:{"Content-Type":"application/json"},body:JSON.stringify({
     contents:[{role:"user",parts:[{text:prompt}]}],
     generationConfig:{temperature:o.temp??0.9,responseMimeType:"application/json",responseSchema:schema}})},S.apiKey);
   const j=await r.json().catch(()=>({}));
   if(!r.ok) throw new Error(apiErr(r.status,j.error?.message||""));
-  const txt=(j.candidates?.[0]?.content?.parts||[]).filter(p=>!p.thought).map(p=>p.text||"").join("");
-  try{ return JSON.parse(txt.replace(/^\s*```(json)?|```\s*$/g,"").trim()) }catch(_){ throw new Error("결과를 읽지 못했어요. 다시 시도해주세요.") }
+  return parseJSONText((j.candidates?.[0]?.content?.parts||[]).filter(p=>!p.thought).map(p=>p.text||"").join(""));
 }
 function errToast(e){ if(!e||e.silent||e.name==="AbortError") return; toast(e.message==="Failed to fetch"?"인터넷 연결을 확인해주세요":e.message,3600) }
 
@@ -1774,7 +2001,7 @@ function storySteps(id){
     <div class="shl">모자란 단계는</div><div class="segbox">${Object.keys(FILL).map(k=>`<button data-fm="${k}" aria-pressed="${fm===k}">${k}</button>`).join("")}</div>
     <button class="btnfull" data-x="write" id="ssGo" style="margin-top:14px"></button>`;
     box.querySelectorAll(".st-t").forEach(t=>t.addEventListener("input",()=>{ secs[+t.dataset.i].title=t.value; save() }));
-    box.querySelectorAll(".st-w").forEach(t=>{ t.addEventListener("input",()=>{ t.value=t.value.replace(/[^0-9]/g,"").slice(0,5); if(+t.value>0){ secs[+t.dataset.i].words=+t.value; save(); upd() } }) });
+    box.querySelectorAll(".st-w").forEach(t=>{ t.addEventListener("input",()=>{ t.value=t.value.replace(/[^0-9]/g,"").slice(0,7); if(+t.value>0){ secs[+t.dataset.i].words=+t.value; save(); upd() } }) });
     upd();
   };
   draw();
@@ -1902,7 +2129,7 @@ function rvPush(list,s,e,labels){
 }
 let RV=null;
 async function runRevise(s,cfg,sel){
-  if(!needApi("퇴고는 Gemini API를 써요. 설정 › API 연결에서 키와 모델을 넣어주세요")) return;
+  if(!needApi("퇴고는 API를 써요. 설정 › API 연결에서 키와 모델을 넣어주세요")) return;
   const secs=s.secs, units=[];
   if(cfg.scope==="sel"&&sel) units.push(sel.text);
   else { const idx=cfg.scope==="step"?[...cfg.pick].sort((a,b)=>a-b):secs.map((_,i)=>i);
@@ -2191,7 +2418,7 @@ function stripChatter(t){
   }
   if(saved) save();
   if(!(S.words>=WMIN)) S.words=1500;
-  if(!S.mode) S.mode=S.apiKey?"api":"app";
+  if(!S.mode) S.mode=S.apiKey||S.orKey?"api":"app";
   if(!S.note&&((S.plotMemo||"").trim()||(S.plotSteps||[]).length)){
     const st=S.plotSteps||[];
     S.note={v:2,memo:S.plotMemo||"",plot:null,fid:"살려서",nsteps:0,secs:st.length>1?st.map(x=>newSec({title:x.k||"",scene:x.d||"",words:r100(S.words/st.length)})):[]};
